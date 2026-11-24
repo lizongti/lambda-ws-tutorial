@@ -1,0 +1,165 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 03 节：StateStore 契约与测试基座</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 03 节：StateStore 契约与测试基座</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“StateStore 契约与测试基座”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>连接、会话、房间和离线数据会跨 Lambda 实例共享。先写清存储契约，才能用同一组语义实现 Memory、DynamoDB 和 Redis。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>Connection_ID</strong>：一次 API Gateway 物理连接。</li>
+<li>解释并应用 <strong>Session_ID</strong>：跨重连保留的逻辑会话。</li>
+<li>解释并应用 <strong>generation</strong>：绑定代数，用于拒绝旧连接迟到的事件。</li>
+<li>解释并应用 <strong>条件更新</strong>：比较 generation 后在存储内部原子写入，不能由调用方先读后写。</li>
+</ul>
+<p>本章与前一节的关系：保留第 02 节“Options、默认配置与 YAML”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>用完整 ws/store/store.go 替换第 02 节的最小 StateStore 占位，因为后续后端需要统一模型、错误和原子操作语义。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>Connection_ID</h3>
+<p>一次 API Gateway 物理连接。</p>
+<h3>Session_ID</h3>
+<p>跨重连保留的逻辑会话。</p>
+<h3>generation</h3>
+<p>绑定代数，用于拒绝旧连接迟到的事件。</p>
+<h3>条件更新</h3>
+<p>比较 generation 后在存储内部原子写入，不能由调用方先读后写。</p>
+<h3>实现约束</h3>
+<ol>
+<li>StateStore 组合五类接口，保证初始化时选择一套一致后端。</li>
+<li>可选扩展接口表达 freshness、expiration 和 fenced room 操作，避免破坏已有自定义后端。</li>
+<li>统一错误码把 not_found、condition_conflict、unavailable 等语义与具体数据库错误分离。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 统一存储错误</h3>
+<p>外部错误文本只包含操作和稳定分类，底层原因保留在 Unwrap 中供服务端诊断。</p>
+<p>在 <code>ws/store/store.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func NewError(code ErrorCode, op string, err error) error {
+	return &amp;Error{Code: code, Op: op, Err: err}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 连接条件接口</h3>
+<p>Delete、Touch 和 stale 查询直接表达 generation 与分页约束。</p>
+<p>在 <code>ws/store/store.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type ConnectionStore interface {
+	PutConnection(ctx context.Context, c Connection) error
+	GetConnection(ctx context.Context, id string) (Connection, error)
+	DeleteConnectionIfMatch(ctx context.Context, id string, generation uint64) error
+	TouchConnection(ctx context.Context, id string, generation uint64, now time.Time) error
+	ListStaleConnections(ctx context.Context, before time.Time, limit int) ([]Connection, error)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 会话原子绑定</h3>
+<p>BindConnection 必须原子检查 expectedGeneration、递增代数并替换当前连接。</p>
+<p>在 <code>ws/store/store.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type SessionStore interface {
+	CreateSession(ctx context.Context, s Session) error
+	GetSession(ctx context.Context, id string) (Session, error)
+	BindConnection(ctx context.Context, sessionID, connectionID string, expectedGeneration uint64) (Session, error)
+	UnbindConnectionIfMatch(ctx context.Context, sessionID, connectionID string, generation uint64) error
+	DeleteExpiredSessions(ctx context.Context, before time.Time, limit int) error
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter03StoreModelsAndErrors(t *testing.T) {
+	err := wsstore.NewError(wsstore.ErrorCodeConditionConflict, &quot;BindConnection&quot;, errors.New(&quot;private backend detail&quot;))
+	if !wsstore.IsConditionConflict(err) || wsstore.IsRetryable(err) {
+		t.Fatalf(&quot;wrong classification: %v&quot;, err)
+	}
+	if err.Error() == &quot;&quot; || err.Error() == &quot;private backend detail&quot; {
+		t.Fatalf(&quot;unsafe error text: %q&quot;, err)
+	}
+	now := time.Now()
+	session := wsstore.Session{SessionID: &quot;s1&quot;, CurrentConnectionID: &quot;c1&quot;, Generation: 2, LastActiveAt: now}
+	connection := wsstore.Connection{ConnectionID: &quot;c1&quot;, SessionID: session.SessionID, Generation: session.Generation}
+	if connection.SessionID != session.SessionID || connection.Generation != 2 {
+		t.Fatal(&quot;model binding mismatch&quot;)
+	}
+	var store wsstore.StateStore
+	if store != nil {
+		t.Fatal(&quot;nil interface must remain nil&quot;)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>错误分类和模型绑定测试通过，后续三个后端可以复用同一契约。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>把 Connection_ID 当成可跨重连身份。</li>
+<li>在 Engine 中先 Get 再 Put 并称之为原子绑定。</li>
+<li>把 DynamoDB/Redis 原始错误文本暴露给客户端。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“StateStore 契约与测试基座”。错误分类和模型绑定测试通过，后续三个后端可以复用同一契约。</p>
+<p>下一节：第 04 节“Memory 连接与会话”。</p>
+</body></html>

@@ -1,0 +1,38 @@
+{
+  "number": 5,
+  "slug": "memory-features",
+  "title": "Memory 房间、离线与幂等",
+  "pdf": "chapters/05-memory-features/05-memory-features.pdf",
+  "zip": "chapters/05-memory-features/05-memory-features.zip",
+  "snapshot": "work/snapshots/05-memory-features",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 20,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/05-memory-features",
+      "startedAt": "2026-11-24T06:49:49.456Z",
+      "exitCode": 0,
+      "log": "verification/chapters/05-memory-features/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/05-memory-features/05-memory-features",
+      "startedAt": "2026-11-24T06:49:55.800Z",
+      "exitCode": 0,
+      "log": "verification/chapters/05-memory-features/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/05-memory-features/05-memory-features",
+      "startedAt": "2026-11-24T06:49:57.784Z",
+      "exitCode": 0,
+      "log": "verification/chapters/05-memory-features/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "c4d2fdbe0f01c46dce99cc75bd89fde548b6ab1db5bd2741ade58e825cde2190",
+  "zipSha256": "60fa55de04c162f5376df7cfe6fec06338522ecf08903179c4579bc3b37f37b9",
+  "verifiedAt": "2026-11-24T06:50:03.045Z"
+}

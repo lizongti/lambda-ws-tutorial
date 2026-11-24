@@ -1,0 +1,163 @@
+{
+  "chapterCount": 20,
+  "pdfCount": 20,
+  "zipCount": 0,
+  "totalPages": 148,
+  "totalPdfBytes": 7624922,
+  "totalZipBytes": 0,
+  "executedCommandCount": 38,
+  "finalWsFiles": 45,
+  "finalWsEqual": true,
+  "singleChapterRebuild": true,
+  "fullCleanRebuild": true,
+  "visualInspection": "20/20 passed",
+  "verificationBoundary": "Memory, dynamodbtest.Fake, miniredis, API Gateway SDK fake/FakePusher only; no real AWS, DynamoDB Local, Redis or API Gateway network verification.",
+  "artifacts": [
+    {
+      "chapter": "01-protocol",
+      "pdfBytes": 380065,
+      "zipBytes": 13960,
+      "pdfSha256": "48a5ac075539328d614d8f29f31bdae54381234b0f9f1ee7cf7191ed86de8cf6",
+      "zipSha256": "773021f007cf5506cc01bb7091c77db4131aa9ac74ea3094b0df551eaea129a0"
+    },
+    {
+      "chapter": "02-options-config",
+      "pdfBytes": 381943,
+      "zipBytes": 25217,
+      "pdfSha256": "13ec9b7d8272046f036c36b14a269ee05140b839bcb96d82e147481b15309d9a",
+      "zipSha256": "c8275e49683ce2cae69e8765c88b7cc9b8b2e945075ba14f2df39a86ab049ab6"
+    },
+    {
+      "chapter": "03-store-contracts",
+      "pdfBytes": 371062,
+      "zipBytes": 29253,
+      "pdfSha256": "7cb3df34456c58011731237b064e3752307c77124e2e9e785c332f15c0a876be",
+      "zipSha256": "7bf68834b6ba620fdbc3de13ccf7b1061e6dd829562d0d66f139d8ce06d6f0bc"
+    },
+    {
+      "chapter": "04-memory-connections",
+      "pdfBytes": 371370,
+      "zipBytes": 33805,
+      "pdfSha256": "5e9b084416667c17ee3e4284ba03fb165489636c96412a7b0d3302b0845dc765",
+      "zipSha256": "105415de9672cf0bc58c8e57edd5026bee855b62053de3eeb7cef695206bf0db"
+    },
+    {
+      "chapter": "05-memory-features",
+      "pdfBytes": 399623,
+      "zipBytes": 39186,
+      "pdfSha256": "c4d2fdbe0f01c46dce99cc75bd89fde548b6ab1db5bd2741ade58e825cde2190",
+      "zipSha256": "60fa55de04c162f5376df7cfe6fec06338522ecf08903179c4579bc3b37f37b9"
+    },
+    {
+      "chapter": "06-pusher",
+      "pdfBytes": 367793,
+      "zipBytes": 44633,
+      "pdfSha256": "8034d8a736427aa740a1690818073542810008d07ebc6fdfbeac343e4543308b",
+      "zipSha256": "4a91d9d26bb4e95155d509d08702d8f77c3b50a6a9a743a67d5296a8d8d8ceee"
+    },
+    {
+      "chapter": "07-router",
+      "pdfBytes": 359917,
+      "zipBytes": 49228,
+      "pdfSha256": "7c8699072ce6dcba817107c572cd8939afbf3f9e3c99dd59c668ca7b57d9321d",
+      "zipSha256": "f61f06d94b9d1a163ae53f66cf3079f1a69346500b8488fce6032384f9934ab4"
+    },
+    {
+      "chapter": "08-lifecycle",
+      "pdfBytes": 368823,
+      "zipBytes": 60051,
+      "pdfSha256": "db4921b2043ce5fb320ba6ea41c419c2d987b0faf058e4d8a9648964c7034e37",
+      "zipSha256": "11e9611503540535ae52a92607f69393f89408f09cc86d5315a7c6031a04b7f6"
+    },
+    {
+      "chapter": "09-engine",
+      "pdfBytes": 380874,
+      "zipBytes": 70249,
+      "pdfSha256": "dc5261edc14fb7fe817961905afc0549b85b53c195a49cf37f604c667a48c8b0",
+      "zipSha256": "7bab5278cf77a2e0e7b495fd04cdc1f9401402cd6c13a3066c2c1e06d36621e8"
+    },
+    {
+      "chapter": "10-auth",
+      "pdfBytes": 376905,
+      "zipBytes": 71789,
+      "pdfSha256": "c6bc79b3917b9be9d864401c0ebe69ddb6d9cf3f0d086610d0f847899dbd1b6d",
+      "zipSha256": "34e943f4b83a49f720ebafc2a31b07bf6e44222c0439024f5df11e91f058dbec"
+    },
+    {
+      "chapter": "11-maintenance",
+      "pdfBytes": 381468,
+      "zipBytes": 76016,
+      "pdfSha256": "e68c891fa9651dbdab58c585d5ae49b81f741204530675a6c1948fd43e0e54cc",
+      "zipSha256": "4cbb87a52c91debeb9ca0f91843aa6e8c8c4c22d980b8185aa59ec2b47e21806"
+    },
+    {
+      "chapter": "12-reconnect",
+      "pdfBytes": 374958,
+      "zipBytes": 78637,
+      "pdfSha256": "44f41952a93196c21adfa2552ee6bf7fe70e1d7f4ed0caa96b635c96ecc017ab",
+      "zipSha256": "c980883093d6c27f3c447cb819a0c9ffa25f3b975a04320676dcdfbb0c3133e1"
+    },
+    {
+      "chapter": "13-offline",
+      "pdfBytes": 378447,
+      "zipBytes": 81348,
+      "pdfSha256": "afd52fa79e9eddb0236415741641ab66881869754ccfb65c61eebcbc7517f5bb",
+      "zipSha256": "11bb3cec843681806c203b9c3faa4c8854c270ef8dd0483217e0e896fbd78794"
+    },
+    {
+      "chapter": "14-rooms",
+      "pdfBytes": 376215,
+      "zipBytes": 84815,
+      "pdfSha256": "bae86512d1605cd5360b7eeb68a6d928eb7f20334b163646df4746f1aa72a44d",
+      "zipSha256": "d8e9601b7c333ce44a7a7b415f5cc1739004e5efe107634c8b91b545c9436818"
+    },
+    {
+      "chapter": "15-dynamodb-connections",
+      "pdfBytes": 381977,
+      "zipBytes": 102199,
+      "pdfSha256": "34c7c7399ce1e6f605e88c88fd28b5989cd9f78669ec260879f9e108f1d40303",
+      "zipSha256": "2fd91755f5b89429923deb11511363b5676b959fdcfc522d9fdaa6d700a5f371"
+    },
+    {
+      "chapter": "16-dynamodb-features",
+      "pdfBytes": 412864,
+      "zipBytes": 110430,
+      "pdfSha256": "d1d253c6085614b071a138a256d6d0f4dcb2f98803201780a3ffacc90afe63f9",
+      "zipSha256": "1ef718f4f57676889eaf890aaa35a77a9ac9ffed4ca099e67c07a9db2ae3cfe4"
+    },
+    {
+      "chapter": "17-redis-connections",
+      "pdfBytes": 372658,
+      "zipBytes": 117776,
+      "pdfSha256": "7048cccc3e544086b24718dfcc6d702eb9264166d7bf487f4e002ae97ce8bff0",
+      "zipSha256": "c3f175f59502e70efe43df77227c4d08eb42fac3c7064d87747117f27c34a83e"
+    },
+    {
+      "chapter": "18-redis-features",
+      "pdfBytes": 388081,
+      "zipBytes": 125610,
+      "pdfSha256": "4d7296a8f3b9c8fd70d17c06fccfd1f8a1f14d1726d8bc10c081d424b20893f8",
+      "zipSha256": "66ad98222c151019cb0d04933b2fd824abf9d9c591d43308ecaa9b981bf4532b"
+    },
+    {
+      "chapter": "19-server-observability",
+      "pdfBytes": 383910,
+      "zipBytes": 177445,
+      "pdfSha256": "9cbbfb6e3a09d9f64fd4f75b149e2f72d7c4147c3b3c1900afe943f0a3bce55c",
+      "zipSha256": "b26a81ef1c29b856c26db2beb5a3ef6dd0e456b079e7ba7ccdc061de8889debf"
+    },
+    {
+      "chapter": "20-integration",
+      "pdfBytes": 415969,
+      "zipBytes": 252515,
+      "pdfSha256": "e5de6c0ae50893f793e029e5c714ff56624353acb2707009f2e51cee0f8e11ce",
+      "zipSha256": "a6e3ca7c1c211098106166b2f623f5f8ccc828f001f329c78442c294899a8f48"
+    }
+  ],
+  "verifiedAt": "2026-11-24T07:06:13.624Z",
+  "previousZipCount": 20,
+  "previousTotalZipBytes": 1644162,
+  "codeDirectoryCount": 20,
+  "zipsExpandedAndRemoved": true,
+  "expandedAt": "2026-11-24T07:41:02.845Z"
+}

@@ -1,0 +1,31 @@
+{
+  "number": 7,
+  "slug": "router",
+  "title": "Context、路由与中间件",
+  "pdf": "chapters/07-router/07-router.pdf",
+  "zip": "chapters/07-router/07-router.zip",
+  "snapshot": "work/snapshots/07-router",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": false,
+  "snippetCount": 4,
+  "zipEntryCount": 25,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/07-router",
+      "startedAt": "2026-11-24T06:50:18.013Z",
+      "exitCode": 0,
+      "log": "verification/chapters/07-router/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/07-router/07-router",
+      "startedAt": "2026-11-24T06:50:24.554Z",
+      "exitCode": 0,
+      "log": "verification/chapters/07-router/02-extracted-test.log"
+    }
+  ],
+  "pdfSha256": "7c8699072ce6dcba817107c572cd8939afbf3f9e3c99dd59c668ca7b57d9321d",
+  "zipSha256": "f61f06d94b9d1a163ae53f66cf3079f1a69346500b8488fce6032384f9934ab4",
+  "verifiedAt": "2026-11-24T06:50:26.867Z"
+}

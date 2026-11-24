@@ -1,0 +1,193 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 08 节：API Gateway 事件与生命周期</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 08 节：API Gateway 事件与生命周期</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“API Gateway 事件与生命周期”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>本节把 API Gateway 的 $connect、$disconnect、$default 事件转换为内部事件，建立 Lambda 与传输无关 Engine 之间的薄适配层。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>$connect</strong>：认证与创建/恢复绑定的入口。</li>
+<li>解释并应用 <strong>$disconnect</strong>：按存储中的当前绑定进行条件清理。</li>
+<li>解释并应用 <strong>$default</strong>：文本 Envelope 的默认消息入口；自定义 route key 可映射内部 path。</li>
+</ul>
+<p>本章与前一节的关系：保留第 07 节“Context、路由与中间件”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>本章仅用 stage08_engine.go、stage08_factory.go 和 clone 辅助函数保持事件适配器可编译。第 09 节会替换临时 Engine/Factory，第 12 节会把 clone 辅助函数收敛到 session.go。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>$connect</h3>
+<p>认证与创建/恢复绑定的入口。</p>
+<h3>$disconnect</h3>
+<p>按存储中的当前绑定进行条件清理。</p>
+<h3>$default</h3>
+<p>文本 Envelope 的默认消息入口；自定义 route key 可映射内部 path。</p>
+<h3>实现约束</h3>
+<ol>
+<li>只复制批准的 headers、query 和 request context，认证格式仍由应用决定。</li>
+<li>ResumeCredential 不进入 String/GoString 或日志。</li>
+<li>适配器返回 HTTP 状态码，应用消息始终走 Pusher。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 内部生命周期事件</h3>
+<p>内部模型保留连接元数据与恢复凭据，但不绑定 AWS SDK 类型。</p>
+<p>在 <code>ws/events.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type ConnectEvent struct {
+	ConnectionID                    string
+	RequestID                       string
+	RouteKey                        string
+	SessionID                       string
+	ResumeCredential                string
+	Headers                         map[string]string
+	QueryParameters                 map[string]string
+	MultiValueHeaders               map[string][]string
+	MultiValueQueryStringParameters map[string][]string
+	RequestContext                  map[string]any
+	ConnectedAt                     time.Time
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 映射连接事件</h3>
+<p>提取 Connection_ID、requestId、route key、认证元数据和连接时间。</p>
+<p>在 <code>ws/server.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func ConnectEventFromAPIGateway(request events.APIGatewayWebsocketProxyRequest) ConnectEvent {
+	requestContext := request.RequestContext
+	query := request.QueryStringParameters
+	return ConnectEvent{
+		ConnectionID:                    requestContext.ConnectionID,
+		RequestID:                       requestContext.RequestID,
+		RouteKey:                        requestContext.RouteKey,
+		SessionID:                       firstMetadataValue(query, request.MultiValueQueryStringParameters, &quot;sessionId&quot;, &quot;sessionID&quot;),
+		ResumeCredential:                firstCredential(request.Headers, query, request.MultiValueQueryStringParameters),
+		Headers:                         cloneStringMap(request.Headers),
+		QueryParameters:                 cloneStringMap(query),
+		MultiValueHeaders:               cloneStringSliceMap(request.MultiValueHeaders),
+		MultiValueQueryStringParameters: cloneStringSliceMap(request.MultiValueQueryStringParameters),
+		RequestContext:                  apiGatewayRequestContext(request),
+		ConnectedAt:                     time.UnixMilli(requestContext.ConnectedAt),
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 统一事件入口</h3>
+<p>按 route key 选择生命周期方法，默认与未知自定义路由进入消息处理。</p>
+<p>在 <code>ws/server.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (e *Engine) HandleEvent(ctx context.Context, request events.APIGatewayWebsocketProxyRequest) (events.APIGatewayProxyResponse, error) {
+	var err error
+	switch request.RequestContext.RouteKey {
+	case RouteConnect:
+		_, err = e.HandleConnect(ctx, ConnectEventFromAPIGateway(request))
+	case RouteDisconnect:
+		err = e.HandleDisconnect(ctx, DisconnectEventFromAPIGateway(request))
+	case DefaultRouteKey:
+		err = e.HandleMessage(ctx, MessageEventFromAPIGateway(request))
+	default:
+		// Unknown/custom route keys follow Router.ResolvePath&#39;s $default rule.
+		err = e.HandleMessage(ctx, MessageEventFromAPIGateway(request))
+	}
+	return events.APIGatewayProxyResponse{StatusCode: statusForError(err)}, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter08APIGatewayAdapters(t *testing.T) {
+	request := events.APIGatewayWebsocketProxyRequest{Body: `{&quot;version&quot;:1,&quot;type&quot;:&quot;ping&quot;}`, Headers: map[string]string{&quot;X-WS-Resume-Credential&quot;: &quot;secret&quot;}, QueryStringParameters: map[string]string{&quot;sessionId&quot;: &quot;s1&quot;}}
+	request.RequestContext.ConnectionID = &quot;c1&quot;
+	request.RequestContext.RequestID = &quot;r1&quot;
+	request.RequestContext.RouteKey = ws.RouteConnect
+	request.RequestContext.ConnectedAt = 1000
+	connected := ws.ConnectEventFromAPIGateway(request)
+	if connected.ConnectionID != &quot;c1&quot; || connected.SessionID != &quot;s1&quot; || connected.ResumeCredential != &quot;secret&quot; {
+		t.Fatalf(&quot;connect=%#v&quot;, connected)
+	}
+	if connected.String() == &quot;&quot; || containsCredential(connected.String(), &quot;secret&quot;) {
+		t.Fatalf(&quot;credential leaked: %q&quot;, connected.String())
+	}
+	request.RequestContext.RouteKey = ws.DefaultRouteKey
+	message := ws.MessageEventFromAPIGateway(request)
+	if message.Body != request.Body || message.ConnectionID != &quot;c1&quot; {
+		t.Fatalf(&quot;message=%#v&quot;, message)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>$connect 元数据、$default body 和 Connection_ID 正确映射，格式化结果不含恢复凭据。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>在 Lambda return body 中返回业务推送。</li>
+<li>把 base64 二进制数据直接当 JSON 文本。</li>
+<li>日志打印整个 ConnectEvent 或请求 headers。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“API Gateway 事件与生命周期”。$connect 元数据、$default body 和 Connection_ID 正确映射，格式化结果不含恢复凭据。</p>
+<p>下一节：第 09 节“Engine 与同连接消息闭环”。</p>
+</body></html>

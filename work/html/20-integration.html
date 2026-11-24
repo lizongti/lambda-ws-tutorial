@@ -1,0 +1,360 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 20 节：跨后端集成与故障注入</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 20 节：跨后端集成与故障注入</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“跨后端集成与故障注入”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>最后用同一组集成场景运行 Memory、DynamoDB fake 和 Redis miniredis，并执行故障注入、race、vet、重复并发和终态哈希核对。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>后端矩阵</strong>：同一测试函数对三个后端断言相同可观察语义。</li>
+<li>解释并应用 <strong>故障注入</strong>：脚本化 gone、暂时错误、慢目标与存储冲突，验证边界而非只测成功路径。</li>
+<li>解释并应用 <strong>终态一致</strong>：ZIP 解包后的 ws 路径集合与 SHA-256 必须和只读源快照完全一致。</li>
+</ul>
+<p>本章与前一节的关系：保留第 19 节“server、Factory 与可观测性”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>用 Source_Snapshot 的完整 ws 和现有 WebSocket 测试替换前 19 节的精简教学测试；最终 ws 不做格式化或改写，并逐文件核对 SHA-256。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>后端矩阵</h3>
+<p>同一测试函数对三个后端断言相同可观察语义。</p>
+<h3>故障注入</h3>
+<p>脚本化 gone、暂时错误、慢目标与存储冲突，验证边界而非只测成功路径。</p>
+<h3>终态一致</h3>
+<p>ZIP 解包后的 ws 路径集合与 SHA-256 必须和只读源快照完全一致。</p>
+<h3>实现约束</h3>
+<ol>
+<li>集成测试使用真实 Engine 和 StateStore 代码，外部服务全部进程内模拟。</li>
+<li>并发场景覆盖 reconnect/disconnect、replay/ack 和 broadcast/cleanup。</li>
+<li>测试退出码、日志、PDF 检查与哈希报告共同构成证据，不能只信生成器成功。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 运行三后端矩阵</h3>
+<p>每个子测试构造独立 fixture，复用同一业务场景且明确后端名称。</p>
+<p>在 <code>tests/ws_integration_test.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func runWSIntegrationBackendsConfigured(t *testing.T, configure func(*ws.Options), test func(t *testing.T, f *wsIntegrationFixture)) {
+	t.Helper()
+	for _, backend := range []wsIntegrationBackend{wsIntegrationMemory, wsIntegrationDynamoDB, wsIntegrationRedis} {
+		t.Run(string(backend), func(t *testing.T) {
+			test(t, newWSIntegrationFixture(t, backend, configure))
+		})
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 验证完整连接闭环</h3>
+<p>从 API Gateway 事件进入 Engine，检查同连接回复、推送与断连清理。</p>
+<p>在 <code>tests/ws_integration_test.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func TestWSIntegrationConnectRequestReplyDisconnect(t *testing.T) {
+	runWSIntegrationBackends(t, func(t *testing.T, f *wsIntegrationFixture) {
+		ctx := context.Background()
+		connect := wsIntegrationGatewayEvent(&quot;connection-e2e&quot;, &quot;request-connect&quot;, ws.RouteConnect, &quot;&quot;)
+		response, err := f.engine.HandleAPIGatewayEvent(ctx, connect)
+		if err != nil || response.StatusCode != http.StatusOK || response.Body != &quot;&quot; {
+			t.Fatalf(&quot;connect response = %+v, error = %v&quot;, response, err)
+		}
+		sessionID := f.onlySessionID(t)
+		session, err := f.store.GetSession(ctx, sessionID)
+		if err != nil || session.CurrentConnectionID != &quot;connection-e2e&quot; || session.Generation != 1 {
+			t.Fatalf(&quot;session after API Gateway connect = %+v, %v&quot;, session, err)
+		}
+
+		f.engine.Handle(&quot;/integration/echo&quot;, func(handlerCtx *ws.Context) {
+			handlerCtx.SetResponse(handlerCtx.Payload)
+		})
+		body, err := ws.EncodeEnvelope(ws.Envelope{
+			Version: ws.ProtocolVersion, Type: ws.TypeRequest, Path: &quot;/integration/echo&quot;,
+			RequestID: &quot;request-e2e&quot;, MessageID: &quot;message-e2e&quot;, SessionID: sessionID,
+			Payload: json.RawMessage(`{&quot;echo&quot;:&quot;through-api-gateway-adapter&quot;}`),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		request := wsIntegrationGatewayEvent(&quot;connection-e2e&quot;, &quot;gateway-request-e2e&quot;, ws.DefaultRouteKey, string(body))
+		response, err = f.engine.HandleAPIGatewayEvent(ctx, request)
+		if err != nil || response.StatusCode != http.StatusOK || response.Body != &quot;&quot; {
+			t.Fatalf(&quot;request response = %+v, error = %v&quot;, response, err)
+		}
+		calls := f.pusher.Calls()
+		if len(calls) != 1 || calls[0].ConnectionID != &quot;connection-e2e&quot; {
+			t.Fatalf(&quot;request pushes = %+v, want one reply to connection-e2e&quot;, calls)
+		}
+		reply := wsEngineDecodeCall(t, calls[0])
+		if reply.Type != ws.TypeResponse || reply.RequestID != &quot;request-e2e&quot; || reply.SessionID != sessionID ||
+			!bytes.Contains(reply.Payload, []byte(&quot;through-api-gateway-adapter&quot;)) {
+			t.Fatalf(&quot;end-to-end reply = %+v&quot;, reply)
+		}
+
+		var explicitReplyErr error
+		f.engine.Handle(&quot;/integration/reply&quot;, func(handlerCtx *ws.Context) {
+			handlerCtx.ConnectionID = &quot;connection-untrusted&quot;
+			explicitReplyErr = f.engine.Reply(handlerCtx, json.RawMessage(`{&quot;kind&quot;:&quot;explicit-reply&quot;}`))
+		})
+		f.engine.Handle(&quot;/integration/failure&quot;, func(handlerCtx *ws.Context) {
+			handlerCtx.ConnectionID = &quot;connection-untrusted&quot;
+			handlerCtx.AbortWithError(ws.NewHandlerError(&quot;integration_denied&quot;, &quot;safe integration failure&quot;))
+		})
+		if err := f.engine.HandleMessage(ctx, wsEngineMessageEvent(t, ws.ConnectResult{
+			ConnectionID: &quot;connection-e2e&quot;, SessionID: sessionID, Generation: 1,
+		}, &quot;message-explicit-reply&quot;, &quot;request-explicit-reply&quot;, &quot;/integration/reply&quot;, nil)); err != nil || explicitReplyErr != nil {
+			t.Fatalf(&quot;explicit Reply error = %v / %v&quot;, err, explicitReplyErr)
+		}
+		if err := f.engine.Push(ctx, &quot;connection-e2e&quot;, ws.NewEvent(
+			&quot;/integration/push&quot;, &quot;request-active-push&quot;, json.RawMessage(`{&quot;kind&quot;:&quot;active-push&quot;}`),
+		)); err != nil {
+			t.Fatalf(&quot;active Push() error = %v&quot;, err)
+		}
+		if err := f.engine.HandleMessage(ctx, wsEngineMessageEvent(t, ws.ConnectResult{
+			ConnectionID: &quot;connection-e2e&quot;, SessionID: sessionID, Generation: 1,
+		}, &quot;message-error&quot;, &quot;request-error&quot;, &quot;/integration/failure&quot;, nil)); err != nil {
+			t.Fatalf(&quot;error Envelope request error = %v&quot;, err)
+		}
+		calls = f.pusher.Calls()
+		if len(calls) != 4 {
+			t.Fatalf(&quot;Reply/Push/error push count = %d, want 4&quot;, len(calls))
+		}
+		for index, wantType := range []string{ws.TypeResponse, ws.TypeResponse, ws.TypeEvent, ws.TypeError} {
+			if calls[index].ConnectionID != &quot;connection-e2e&quot; {
+				t.Errorf(&quot;push %d targeted %q, want connection-e2e&quot;, index, calls[index].ConnectionID)
+			}
+			envelope := wsEngineDecodeCall(t, calls[index])
+			if envelope.Type != wantType || envelope.SessionID != sessionID {
+				t.Errorf(&quot;push %d Envelope = %+v, want type %s and session %s&quot;, index, envelope, wantType, sessionID)
+			}
+		}
+		errorEnvelope := wsEngineDecodeCall(t, calls[3])
+		if errorEnvelope.RequestID != &quot;request-error&quot; || errorEnvelope.Error == nil ||
+			errorEnvelope.Error.Code != &quot;integration_denied&quot; || errorEnvelope.Error.Message != &quot;safe integration failure&quot; {
+			t.Fatalf(&quot;error Envelope = %+v&quot;, errorEnvelope)
+		}
+
+		disconnect := wsIntegrationGatewayEvent(&quot;connection-e2e&quot;, &quot;request-disconnect&quot;, ws.RouteDisconnect, &quot;&quot;)
+		for attempt := 0; attempt &lt; 2; attempt++ {
+			response, err = f.engine.HandleAPIGatewayEvent(ctx, disconnect)
+			if err != nil || response.StatusCode != http.StatusOK || response.Body != &quot;&quot; {
+				t.Fatalf(&quot;disconnect %d response = %+v, error = %v&quot;, attempt+1, response, err)
+			}
+		}
+		if _, err := f.store.GetConnection(ctx, &quot;connection-e2e&quot;); !wsstore.IsNotFound(err) {
+			t.Fatalf(&quot;connection after disconnect = %v, want not-found&quot;, err)
+		}
+		session, err = f.store.GetSession(ctx, sessionID)
+		if err != nil || session.CurrentConnectionID != &quot;&quot; || session.Generation != 1 {
+			t.Fatalf(&quot;session after disconnect = %+v, %v&quot;, session, err)
+		}
+	})
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 交错重连与确认</h3>
+<p>并发执行生命周期与离线操作，用 race 和重复运行暴露世代竞争。</p>
+<p>在 <code>tests/ws_integration_test.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func TestWSIntegrationConcurrentDisconnectReconnectReplayAck(t *testing.T) {
+	runWSIntegrationBackends(t, func(t *testing.T, f *wsIntegrationFixture) {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		for iteration := 0; iteration &lt; 6; iteration++ {
+			suffix := fmt.Sprintf(&quot;-%02d&quot;, iteration)
+			first := mustWSSessionTestConnect(t, f.engine, wsSessionTestConnectEvent(&quot;connection-race-old&quot;+suffix, &quot;alice&quot;, &quot;&quot;, &quot;&quot;))
+			if err := f.engine.HandleDisconnect(ctx, ws.DisconnectEvent{
+				ConnectionID: first.ConnectionID, SessionID: first.SessionID, Generation: first.Generation,
+			}); err != nil {
+				t.Fatalf(&quot;initial disconnect error = %v&quot;, err)
+			}
+			messageID := &quot;message-race&quot; + suffix
+			if _, err := f.engine.PushToSessionWithResult(ctx, first.SessionID, wsOfflineTestMessage(messageID, iteration+1)); err != nil {
+				t.Fatalf(&quot;offline push error = %v&quot;, err)
+			}
+			second := mustWSSessionTestConnect(t, f.engine, wsSessionTestConnectEvent(
+				&quot;connection-race-second&quot;+suffix, &quot;alice&quot;, first.SessionID, first.ResumeCredential,
+			))
+			ackEvent := wsLifecycleControlEvent(t, second, ws.NewAck(&quot;request-race-ack&quot;+suffix, messageID))
+			// Make the surviving generation-2 delivery eligible for the winning
+			// reconnect to fence and resend it at generation 3.
+			f.clock.Advance(f.options.Offline.AckTimeout)
+
+			type outcome struct {
+				kind      string
+				connected ws.ConnectResult
+				err       error
+			}
+			start := make(chan struct{})
+			outcomes := make(chan outcome, 4)
+			var wg sync.WaitGroup
+			wg.Add(4)
+			go func() {
+				defer wg.Done()
+				&lt;-start
+				err := f.engine.HandleDisconnect(ctx, ws.DisconnectEvent{
+					ConnectionID: second.ConnectionID, SessionID: second.SessionID, Generation: second.Generation,
+				})
+				outcomes &lt;- outcome{kind: &quot;disconnect&quot;, err: err}
+			}()
+			go func() {
+				defer wg.Done()
+				&lt;-start
+				connected, err := f.engine.HandleConnect(ctx, wsSessionTestConnectEvent(
+					&quot;connection-race-third&quot;+suffix, &quot;alice&quot;, first.SessionID, first.ResumeCredential,
+				))
+				outcomes &lt;- outcome{kind: &quot;reconnect&quot;, connected: connected, err: err}
+			}()
+			go func() {
+				defer wg.Done()
+				&lt;-start
+				_, err := f.engine.ReplayOffline(ctx, first.SessionID)
+				outcomes &lt;- outcome{kind: &quot;replay&quot;, err: err}
+			}()
+			go func() {
+				defer wg.Done()
+				&lt;-start
+				outcomes &lt;- outcome{kind: &quot;ack&quot;, err: f.engine.HandleMessage(ctx, ackEvent)}
+			}()
+			close(start)
+			wg.Wait()
+			close(outcomes)
+
+			var current ws.ConnectResult
+			for outcome := range outcomes {
+				switch outcome.kind {
+				case &quot;reconnect&quot;:
+					if outcome.err != nil {
+						t.Fatalf(&quot;iteration %d reconnect error = %v&quot;, iteration, outcome.err)
+					}
+					current = outcome.connected
+				case &quot;disconnect&quot;, &quot;ack&quot;:
+					if outcome.err != nil {
+						t.Fatalf(&quot;iteration %d %s error = %v&quot;, iteration, outcome.kind, outcome.err)
+					}
+				case &quot;replay&quot;:
+					if outcome.err != nil &amp;&amp; !errors.Is(outcome.err, ws.ErrConnectionNotFound) &amp;&amp;
+						!errors.Is(outcome.err, ws.ErrSessionNotFound) &amp;&amp; !errors.Is(outcome.err, ws.ErrStaleConnection) &amp;&amp;
+						!wsstore.IsConditionConflict(outcome.err) &amp;&amp; !wsstore.IsNotFound(outcome.err) {
+						t.Fatalf(&quot;iteration %d replay returned non-fencing error = %v&quot;, iteration, outcome.err)
+					}
+				}
+			}
+			if current.ConnectionID != &quot;connection-race-third&quot;+suffix || current.Generation != 3 || !current.Reconnected {
+				t.Fatalf(&quot;iteration %d winning reconnect = %+v&quot;, iteration, current)
+			}
+			stored, err := f.store.GetSession(ctx, first.SessionID)
+			if err != nil || stored.CurrentConnectionID != current.ConnectionID || stored.Generation != current.Generation {
+				t.Fatalf(&quot;iteration %d final binding = %+v, %v; current = %+v&quot;, iteration, stored, err, current)
+			}
+			connection, err := f.store.GetConnection(ctx, current.ConnectionID)
+			if err != nil || connection.Generation != current.Generation || connection.State != wsstore.ConnectionStateActive {
+				t.Fatalf(&quot;iteration %d current connection = %+v, %v&quot;, iteration, connection, err)
+			}
+			if _, err := f.store.GetConnection(ctx, second.ConnectionID); !wsstore.IsNotFound(err) {
+				t.Fatalf(&quot;iteration %d replaced connection remains: %v&quot;, iteration, err)
+			}
+
+			// Any ack which won before reconnect may already have removed the entry.
+			// Otherwise, a replay which overlapped the generation transition may have
+			// retained the old sent state. Advance past ackTimeout and drain through
+			// the winning Engine binding before issuing the final idempotent ack.
+			f.clock.Advance(f.options.Offline.AckTimeout)
+			if _, err := f.engine.ReplayOffline(ctx, first.SessionID); err != nil {
+				t.Fatalf(&quot;iteration %d final replay error = %v&quot;, iteration, err)
+			}
+			mustWSOfflineTestAck(t, f.engine, current, messageID)
+			pending, err := f.store.ListPending(ctx, first.SessionID, 10)
+			if err != nil || len(pending) != 0 {
+				t.Fatalf(&quot;iteration %d pending after winning ack = %+v, %v&quot;, iteration, pending, err)
+			}
+			beforeReplay := f.pusher.CallCount()
+			replay, err := f.engine.ReplayOffline(ctx, first.SessionID)
+			if err != nil || replay.Attempted != 0 || f.pusher.CallCount() != beforeReplay {
+				t.Fatalf(&quot;iteration %d acknowledged message replayed again: %+v, %v&quot;, iteration, replay, err)
+			}
+		}
+	})
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<p>最终章直接运行仓库现有完整 WebSocket 测试，不再使用前面章节的精简测试。</p>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<p>最终章还需要执行：</p>
+<pre><code class="language-sh">go vet -mod=readonly ./...
+go test -mod=readonly -race -count=20 ./tests -run &quot;TestWSIntegrationConcurrentDisconnectReconnectReplayAck|TestWSIntegrationRaceBroadcastAndCleanup&quot;
+</code></pre>
+<h3>预期结果</h3>
+<p>全部普通测试、race、vet 和关键并发重复场景通过；最终 ws 无缺失、额外或哈希差异。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>把 DynamoDB fake 当成 DynamoDB Local 或真实 AWS。</li>
+<li>只运行工作目录测试而不测试 ZIP 解包结果。</li>
+<li>只比较最终文件数量，忽略额外文件和逐文件哈希。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“跨后端集成与故障注入”。全部普通测试、race、vet 和关键并发重复场景通过；最终 ws 无缺失、额外或哈希差异。</p>
+<p>教程结束：请保留最终 PDF、ZIP、测试日志和终态哈希报告，便于复核。</p>
+</body></html>

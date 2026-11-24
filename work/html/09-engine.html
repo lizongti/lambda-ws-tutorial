@@ -1,0 +1,209 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 09 节：Engine 与同连接消息闭环</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 09 节：Engine 与同连接消息闭环</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Engine 与同连接消息闭环”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>现在把协议、存储、路由和 Pusher 组合成 Engine，完成“入站请求从同一逻辑连接收到回复”的核心闭环。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>同连接回复</strong>：Reply 使用 Context 捕获的 originating Connection_ID。</li>
+<li>解释并应用 <strong>活动绑定校验</strong>：消息处理前确认 Connection、Session、Principal 和 generation 一致。</li>
+<li>解释并应用 <strong>入站幂等</strong>：messageId 预留处理权，已完成响应可直接重放。</li>
+</ul>
+<p>本章与前一节的关系：保留第 08 节“API Gateway 事件与生命周期”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>用真实 engine.go 与 Factory 过渡构造器替换第 08 节的空 Engine。stage_core_support.go 暂时承接维护、重连和离线符号，第 11、12、13 节会逐一替换，第 19 节再替换 Factory。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>同连接回复</h3>
+<p>Reply 使用 Context 捕获的 originating Connection_ID。</p>
+<h3>活动绑定校验</h3>
+<p>消息处理前确认 Connection、Session、Principal 和 generation 一致。</p>
+<h3>入站幂等</h3>
+<p>messageId 预留处理权，已完成响应可直接重放。</p>
+<h3>实现约束</h3>
+<ol>
+<li>无效消息在业务 Handler 前变成 error Envelope。</li>
+<li>显式 Push 不猜测目标，未知 Connection_ID 返回 not-found。</li>
+<li>Pusher gone 进入统一清理与离线策略，暂时错误才有界重试。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 构造 Engine</h3>
+<p>校验完整依赖并包装可重试 StateStore，但不启动后台 goroutine 或网络调用。</p>
+<p>在 <code>ws/engine.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func NewEngine(options *Options) (*Engine, error) {
+	if options == nil {
+		return nil, invalidConfig(&quot;options&quot;, &quot;must not be nil&quot;)
+	}
+	if nilDependency(options.StateStore) {
+		return nil, invalidConfig(&quot;stateStore&quot;, &quot;must not be nil&quot;)
+	}
+	if nilDependency(options.Pusher) {
+		return nil, invalidConfig(&quot;pusher&quot;, &quot;must not be nil&quot;)
+	}
+	copyOptions := *options
+	if nilDependency(copyOptions.RetrySleeper) {
+		copyOptions.RetrySleeper = sleepWithContext
+	}
+	if err := copyOptions.Validate(); err != nil {
+		return nil, err
+	}
+	stateStore := copyOptions.StateStore
+	copyOptions.StateStore = &amp;retryingStateStore{delegate: stateStore, options: &amp;copyOptions}
+	return &amp;Engine{
+		Options:       &amp;copyOptions,
+		Router:        NewRouter(),
+		stateStore:    stateStore,
+		observability: &amp;observability{},
+	}, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 从原连接回复</h3>
+<p>响应目标来自不可变 originating 字段，而不是客户端 payload。</p>
+<p>在 <code>ws/engine.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (e *Engine) Reply(ctx *Context, payload any) error {
+	if e == nil || ctx == nil {
+		return ErrInvalidEvent
+	}
+	body, err := marshalPayload(payload)
+	if err != nil {
+		return err
+	}
+	msg := NewResponse(ctx.RequestID, body)
+	msg.SessionID = ctx.OriginatingSessionID()
+	return e.Push(ctx.StdContext(), ctx.OriginatingConnectionID(), msg)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 校验活动绑定</h3>
+<p>同时校验物理连接、逻辑会话、主体和 generation，拒绝旧连接继续操作。</p>
+<p>在 <code>ws/engine.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (e *Engine) validateActiveBinding(ctx context.Context, connectionID string) (wsstore.Connection, wsstore.Session, error) {
+	connection, err := e.Options.StateStore.GetConnection(ctx, connectionID)
+	if err != nil {
+		if wsstore.IsNotFound(err) {
+			return wsstore.Connection{}, wsstore.Session{}, errors.Join(ErrConnectionNotFound, err)
+		}
+		return wsstore.Connection{}, wsstore.Session{}, err
+	}
+	if connection.State != wsstore.ConnectionStateActive || connection.SessionID == &quot;&quot; {
+		return wsstore.Connection{}, wsstore.Session{}, ErrStaleConnection
+	}
+	session, err := e.Options.StateStore.GetSession(ctx, connection.SessionID)
+	if err != nil {
+		if wsstore.IsNotFound(err) {
+			return wsstore.Connection{}, wsstore.Session{}, errors.Join(ErrSessionNotFound, err)
+		}
+		return wsstore.Connection{}, wsstore.Session{}, err
+	}
+	if session.CurrentConnectionID != connectionID || session.Generation != connection.Generation ||
+		session.PrincipalSubject != connection.PrincipalSubject ||
+		(!session.ExpiresAt.IsZero() &amp;&amp; !session.ExpiresAt.After(e.Options.Clock.Now())) {
+		return wsstore.Connection{}, wsstore.Session{}, ErrStaleConnection
+	}
+	return connection, session, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter09SameConnectionReply(t *testing.T) {
+	engine, pusher, store := newChapter09Engine(t, nil)
+	chapter09Seed(t, engine, store, &quot;connection-A&quot;, &quot;session-A&quot;)
+	engine.Handle(&quot;/echo&quot;, func(ctx *ws.Context) {
+		if err := engine.Reply(ctx, map[string]string{&quot;text&quot;: &quot;hello&quot;}); err != nil {
+			t.Fatal(err)
+		}
+	})
+	body, _ := json.Marshal(ws.Envelope{Version: 1, Type: ws.TypeRequest, Path: &quot;/echo&quot;, RequestID: &quot;r1&quot;, MessageID: &quot;m1&quot;})
+	if err := engine.HandleMessage(context.Background(), ws.MessageEvent{ConnectionID: &quot;connection-A&quot;, RouteKey: ws.DefaultRouteKey, Body: string(body)}); err != nil {
+		t.Fatal(err)
+	}
+	calls := pusher.Calls()
+	if len(calls) != 1 || calls[0].ConnectionID != &quot;connection-A&quot; {
+		t.Fatalf(&quot;calls=%#v&quot;, calls)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>/echo 的处理只产生一次 PostToConnection，目标严格等于入站 connection-A。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>依赖 Lambda 实例亲和性保存连接。</li>
+<li>Reply 从 payload 读取目标 Connection_ID。</li>
+<li>协议错误也进入业务重试。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Engine 与同连接消息闭环”。/echo 的处理只产生一次 PostToConnection，目标严格等于入站 connection-A。</p>
+<p>下一节：第 10 节“认证、授权与 Principal”。</p>
+</body></html>

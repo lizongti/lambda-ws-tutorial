@@ -1,0 +1,196 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 10 节：认证、授权与 Principal</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 10 节：认证、授权与 Principal</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“认证、授权与 Principal”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>通用框架不能绑定某一种 token。通过 Authenticator/Authorizer 注入身份与策略，并保证认证失败前没有任何状态写入。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>Principal</strong>：稳定 Subject 加应用字符串 Claims，不包含游戏对象。</li>
+<li>解释并应用 <strong>Authenticator</strong>：从批准的连接元数据建立身份。</li>
+<li>解释并应用 <strong>Authorizer</strong>：对 path、房间和 Session 恢复等 Action 做策略判断。</li>
+</ul>
+<p>本章与前一节的关系：保留第 09 节“Engine 与同连接消息闭环”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>删除 stage_auth_dependencies.go，改用本章完整认证、授权和 Principal 实现；配置 API 保持不变，因此前两章测试仍应通过。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>Principal</h3>
+<p>稳定 Subject 加应用字符串 Claims，不包含游戏对象。</p>
+<h3>Authenticator</h3>
+<p>从批准的连接元数据建立身份。</p>
+<h3>Authorizer</h3>
+<p>对 path、房间和 Session 恢复等 Action 做策略判断。</p>
+<h3>实现约束</h3>
+<ol>
+<li>匿名认证使用独立类型，只有显式 development + anonymous 才能通过启动校验。</li>
+<li>认证失败的底层 token 错误不向外暴露。</li>
+<li>授权中间件在业务 Handler 前 Abort。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 身份模型</h3>
+<p>Subject 是框架需要的最小稳定身份，Claims 可复制且默认格式化不泄露值。</p>
+<p>在 <code>ws/auth.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type Principal struct {
+	Subject string
+	Claims  map[string]string
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 生产认证校验</h3>
+<p>生产缺少认证器、匿名模式未显式开启或配置不一致都在启动时失败。</p>
+<p>在 <code>ws/auth.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func ValidateAuthConfig(config AuthConfig, authenticator Authenticator) error {
+	_, anonymousAuthenticator := authenticator.(interface{ developmentAnonymous() })
+
+	if !config.Development &amp;&amp; (config.Anonymous || anonymousAuthenticator) {
+		return ErrAnonymousNotAllowed
+	}
+	if config.Anonymous != anonymousAuthenticator {
+		return ErrAnonymousNotExplicit
+	}
+	if !config.Development &amp;&amp; authenticator == nil {
+		return ErrAuthenticatorRequired
+	}
+	if (config.Required || config.Protected) &amp;&amp; authenticator == nil {
+		return ErrAuthenticatorRequired
+	}
+	return nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 路径授权中间件</h3>
+<p>检查 Subject、调用策略并以安全 authorization_denied 终止后续处理。</p>
+<p>在 <code>ws/auth.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func RequireAuthorization(authorizer Authorizer) HandlerFunc {
+	return func(ctx *Context) {
+		if ctx == nil || ctx.IsAborted() || ctx.Err() != nil {
+			return
+		}
+		if ctx.Principal.Subject == &quot;&quot; {
+			ctx.AbortWithError(NewHandlerError(&quot;authentication_required&quot;, &quot;authentication required&quot;))
+			return
+		}
+		if authorizer == nil {
+			ctx.AbortWithError(NewHandlerError(&quot;internal_error&quot;, &quot;authorization is not configured&quot;))
+			return
+		}
+
+		action := Action{
+			Name:     ActionPathAccess,
+			Resource: ctx.RoutePath(),
+			Path:     ctx.RoutePath(),
+		}
+		if err := authorizer.Authorize(ctx.StdContext(), ctx.Principal.Clone(), action); err != nil {
+			// Do not wrap or copy the application&#39;s error: it can contain policy
+			// details, credentials or backend information.
+			ctx.AbortWithError(NewHandlerError(&quot;authorization_denied&quot;, &quot;access denied&quot;))
+		}
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter10AuthenticationAndAuthorization(t *testing.T) {
+	if err := ws.ValidateProductionAuth(nil); !errors.Is(err, ws.ErrAuthenticatorRequired) {
+		t.Fatalf(&quot;production auth err=%v&quot;, err)
+	}
+	denied := ws.AuthenticatorFunc(func(context.Context, ws.ConnectRequest) (ws.Principal, error) {
+		return ws.Principal{}, errors.New(&quot;private token detail&quot;)
+	})
+	engine, _, store := newChapter09Engine(t, func(o *ws.Options) { o.Authenticator = denied; o.Auth.Anonymous = false })
+	if _, err := engine.HandleConnect(context.Background(), ws.ConnectEvent{ConnectionID: &quot;denied-connection&quot;}); !errors.Is(err, ws.ErrAuthenticationFailed) {
+		t.Fatalf(&quot;connect err=%v&quot;, err)
+	}
+	if _, err := store.GetConnection(context.Background(), &quot;denied-connection&quot;); !wsstore.IsNotFound(err) {
+		t.Fatalf(&quot;failed auth created state: %v&quot;, err)
+	}
+	ctx := &amp;ws.Context{Context: context.Background(), Path: &quot;/private&quot;, Principal: ws.Principal{Subject: &quot;alice&quot;}}
+	ws.RequireAuthorization(ws.AuthorizerFunc(func(context.Context, ws.Principal, ws.Action) error { return errors.New(&quot;denied&quot;) }))(ctx)
+	if !ctx.IsAborted() || ws.HandlerErrorCode(ctx.Err()) != &quot;authorization_denied&quot; {
+		t.Fatalf(&quot;authorization state=%v err=%v&quot;, ctx.IsAborted(), ctx.Err())
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>生产无认证器被拒绝，失败连接不留状态，授权失败转为安全错误。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>把原始 token 放入日志或 Principal.String。</li>
+<li>先创建 Session 再认证。</li>
+<li>将游戏权限模型硬编码到 ws 框架。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“认证、授权与 Principal”。生产无认证器被拒绝，失败连接不留状态，授权失败转为安全错误。</p>
+<p>下一节：第 11 节“心跳与 Maintenance”。</p>
+</body></html>

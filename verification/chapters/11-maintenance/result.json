@@ -1,0 +1,38 @@
+{
+  "number": 11,
+  "slug": "maintenance",
+  "title": "心跳与 Maintenance",
+  "pdf": "chapters/11-maintenance/11-maintenance.pdf",
+  "zip": "chapters/11-maintenance/11-maintenance.zip",
+  "snapshot": "work/snapshots/11-maintenance",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 45,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/11-maintenance",
+      "startedAt": "2026-11-24T06:51:18.082Z",
+      "exitCode": 0,
+      "log": "verification/chapters/11-maintenance/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/11-maintenance/11-maintenance",
+      "startedAt": "2026-11-24T06:51:25.349Z",
+      "exitCode": 0,
+      "log": "verification/chapters/11-maintenance/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/11-maintenance/11-maintenance",
+      "startedAt": "2026-11-24T06:51:28.177Z",
+      "exitCode": 0,
+      "log": "verification/chapters/11-maintenance/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "e68c891fa9651dbdab58c585d5ae49b81f741204530675a6c1948fd43e0e54cc",
+  "zipSha256": "4cbb87a52c91debeb9ca0f91843aa6e8c8c4c22d980b8185aa59ec2b47e21806",
+  "verifiedAt": "2026-11-24T06:51:34.815Z"
+}

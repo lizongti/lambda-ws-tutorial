@@ -1,0 +1,51 @@
+{
+  "workspace": "work/rebuild-check",
+  "commands": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js ci --no-audit --no-fund",
+      "cwd": "work/rebuild-check/tools",
+      "startedAt": "2026-11-24T06:59:05.262Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/01-node.log"
+    },
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/make-snapshots.mjs",
+      "cwd": "work/rebuild-check",
+      "startedAt": "2026-11-24T06:59:09.092Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/02-node.log"
+    },
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/make-docs.mjs",
+      "cwd": "work/rebuild-check",
+      "startedAt": "2026-11-24T06:59:11.191Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/03-node.log"
+    },
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/self-test.mjs",
+      "cwd": "work/rebuild-check",
+      "startedAt": "2026-11-24T06:59:11.330Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/04-node.log"
+    },
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/build.mjs --chapter 1",
+      "cwd": "work/rebuild-check",
+      "startedAt": "2026-11-24T06:59:12.926Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/05-node.log"
+    },
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/build.mjs --from 1 --to 20",
+      "cwd": "work/rebuild-check",
+      "startedAt": "2026-11-24T06:59:22.586Z",
+      "exitCode": 0,
+      "log": "work/rebuild-check/verification/06-node.log"
+    }
+  ],
+  "singleChapterRebuild": true,
+  "fullRebuild": true,
+  "finalEquivalence": true,
+  "verifiedAt": "2026-11-24T07:05:52.615Z"
+}

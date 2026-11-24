@@ -1,0 +1,121 @@
+package http
+
+import (
+	"github.com/mohae/deepcopy"
+)
+
+type Option interface {
+	Apply(o *Options)
+}
+
+type HttpOption func(*Options)
+
+func (f HttpOption) Apply(o *Options) { f(o) }
+
+type LinkRule struct {
+	Dst     string
+	Methods []string // empty or ["ALL"] means all methods
+}
+
+type Options struct {
+	// Http Options
+	Address           string
+	DebugMode         bool
+	CorsMode          bool
+	StaticLinkMap     map[string]LinkRule
+	StaticLinkKeys    []string
+	PrefixLinkMap     map[string]LinkRule
+	PrefixLinkKeys    []string
+	PageNotFoundRules []LinkRule
+}
+
+var defaultOptions = &Options{
+	Address:           ":8080",
+	DebugMode:         false,
+	CorsMode:          false,
+	StaticLinkMap:     map[string]LinkRule{},
+	StaticLinkKeys:    []string{},
+	PrefixLinkMap:     map[string]LinkRule{},
+	PrefixLinkKeys:    []string{},
+	PageNotFoundRules: nil,
+}
+
+func NewOptions(opts ...Option) *Options {
+	options := deepcopy.Copy(defaultOptions).(*Options)
+	options.init(opts...)
+	return options
+}
+
+func (o *Options) init(opts ...Option) {
+	for _, opt := range opts {
+		if opt != nil {
+			opt.Apply(o)
+		}
+	}
+}
+
+// -------------- Http Options ----------------
+func WithAddress(addr string) Option {
+	return HttpOption(func(o *Options) {
+		o.Address = addr
+	})
+}
+
+func WithDebugMode() Option {
+	return HttpOption(func(o *Options) {
+		o.DebugMode = true
+	})
+}
+
+func WithCorsMode() Option {
+	return HttpOption(func(o *Options) {
+		o.CorsMode = true
+	})
+}
+
+// methodAll is the wildcard usable in LinkRule.Methods.
+const methodAll = "ALL"
+
+// MatchMethod reports whether the rule applies to the given request method.
+// The wire-method comparison is case-sensitive on purpose: per RFC 9110 §9.1
+// method tokens are case-sensitive, and gin's method trees are too. Treating a
+// case-variant method (e.g. "get") as GET here would rewrite a request that
+// the router can never match, bouncing it through NoRoute until the goroutine
+// stack overflows.
+func (r LinkRule) MatchMethod(method string) bool {
+	if len(r.Methods) == 0 {
+		return true
+	}
+	for _, m := range r.Methods {
+		if m == methodAll || m == method {
+			return true
+		}
+	}
+	return false
+}
+
+func WithStaticLink(srcPath, dstPath string, methods ...string) Option {
+	return HttpOption(func(o *Options) {
+		key := normalizePath(srcPath)
+		if _, ok := o.StaticLinkMap[key]; !ok {
+			o.StaticLinkKeys = append(o.StaticLinkKeys, key)
+		}
+		o.StaticLinkMap[key] = LinkRule{Dst: normalizePath(dstPath), Methods: methods}
+	})
+}
+
+func WithPrefixLink(srcPrefix string, dstPrefix string, methods ...string) Option {
+	return HttpOption(func(o *Options) {
+		key := normalizePath(srcPrefix)
+		if _, ok := o.PrefixLinkMap[key]; !ok {
+			o.PrefixLinkKeys = append(o.PrefixLinkKeys, key)
+		}
+		o.PrefixLinkMap[key] = LinkRule{Dst: normalizePath(dstPrefix), Methods: methods}
+	})
+}
+
+func WithPageNotFound(path string, methods ...string) Option {
+	return HttpOption(func(o *Options) {
+		o.PageNotFoundRules = append(o.PageNotFoundRules, LinkRule{Dst: normalizePath(path), Methods: methods})
+	})
+}

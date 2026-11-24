@@ -1,0 +1,52 @@
+{
+  "number": 20,
+  "slug": "integration",
+  "title": "跨后端集成与故障注入",
+  "pdf": "chapters/20-integration/20-integration.pdf",
+  "zip": "chapters/20-integration/20-integration.zip",
+  "snapshot": "work/snapshots/20-integration",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 3,
+  "zipEntryCount": 120,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/20-integration",
+      "startedAt": "2026-11-24T06:54:05.340Z",
+      "exitCode": 0,
+      "log": "verification/chapters/20-integration/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/20-integration/20-integration",
+      "startedAt": "2026-11-24T06:54:15.547Z",
+      "exitCode": 0,
+      "log": "verification/chapters/20-integration/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/20-integration/20-integration",
+      "startedAt": "2026-11-24T06:54:22.096Z",
+      "exitCode": 0,
+      "log": "verification/chapters/20-integration/03-extracted-race.log"
+    },
+    {
+      "command": "go vet -mod=readonly ./...",
+      "cwd": "work/extract/20-integration/20-integration",
+      "startedAt": "2026-11-24T06:54:36.983Z",
+      "exitCode": 0,
+      "log": "verification/chapters/20-integration/04-vet.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=20 ./tests -run TestWSIntegrationConcurrentDisconnectReconnectReplayAck|TestWSIntegrationRaceBroadcastAndCleanup",
+      "cwd": "work/extract/20-integration/20-integration",
+      "startedAt": "2026-11-24T06:54:39.733Z",
+      "exitCode": 0,
+      "log": "verification/chapters/20-integration/05-concurrency-repeat.log"
+    }
+  ],
+  "pdfSha256": "e5de6c0ae50893f793e029e5c714ff56624353acb2707009f2e51cee0f8e11ce",
+  "zipSha256": "a6e3ca7c1c211098106166b2f623f5f8ccc828f001f329c78442c294899a8f48",
+  "verifiedAt": "2026-11-24T06:54:56.027Z"
+}

@@ -1,0 +1,5 @@
+$ go test -mod=readonly -count=1 ./...
+ok  	github.com/aura-studio/lambda/tests	0.331s
+?   	github.com/aura-studio/lambda/ws	[no test files]
+?   	github.com/aura-studio/lambda/ws/store	[no test files]
+?   	github.com/aura-studio/lambda/ws/store/memory	[no test files]

@@ -1,0 +1,384 @@
+{
+  "chapters": [
+    {
+      "chapter": "01-protocol",
+      "pageCount": 5,
+      "chineseCharacterCount": 1044,
+      "inspectedPages": [
+        1,
+        3,
+        5
+      ],
+      "renderedPages": [
+        "verification/visual/01-protocol/page-001.png",
+        "verification/visual/01-protocol/page-003.png",
+        "verification/visual/01-protocol/page-005.png"
+      ],
+      "contactSheet": "verification/visual/01-protocol-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "02-options-config",
+      "pageCount": 6,
+      "chineseCharacterCount": 1117,
+      "inspectedPages": [
+        1,
+        3,
+        6
+      ],
+      "renderedPages": [
+        "verification/visual/02-options-config/page-001.png",
+        "verification/visual/02-options-config/page-003.png",
+        "verification/visual/02-options-config/page-006.png"
+      ],
+      "contactSheet": "verification/visual/02-options-config-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "03-store-contracts",
+      "pageCount": 5,
+      "chineseCharacterCount": 1101,
+      "inspectedPages": [
+        1,
+        3,
+        5
+      ],
+      "renderedPages": [
+        "verification/visual/03-store-contracts/page-001.png",
+        "verification/visual/03-store-contracts/page-003.png",
+        "verification/visual/03-store-contracts/page-005.png"
+      ],
+      "contactSheet": "verification/visual/03-store-contracts-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "04-memory-connections",
+      "pageCount": 6,
+      "chineseCharacterCount": 1056,
+      "inspectedPages": [
+        1,
+        2,
+        6
+      ],
+      "renderedPages": [
+        "verification/visual/04-memory-connections/page-001.png",
+        "verification/visual/04-memory-connections/page-002.png",
+        "verification/visual/04-memory-connections/page-006.png"
+      ],
+      "contactSheet": "verification/visual/04-memory-connections-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "05-memory-features",
+      "pageCount": 9,
+      "chineseCharacterCount": 1106,
+      "inspectedPages": [
+        1,
+        2,
+        9
+      ],
+      "renderedPages": [
+        "verification/visual/05-memory-features/page-001.png",
+        "verification/visual/05-memory-features/page-002.png",
+        "verification/visual/05-memory-features/page-009.png"
+      ],
+      "contactSheet": "verification/visual/05-memory-features-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "06-pusher",
+      "pageCount": 5,
+      "chineseCharacterCount": 964,
+      "inspectedPages": [
+        1,
+        3,
+        5
+      ],
+      "renderedPages": [
+        "verification/visual/06-pusher/page-001.png",
+        "verification/visual/06-pusher/page-003.png",
+        "verification/visual/06-pusher/page-005.png"
+      ],
+      "contactSheet": "verification/visual/06-pusher-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "07-router",
+      "pageCount": 6,
+      "chineseCharacterCount": 959,
+      "inspectedPages": [
+        1,
+        2,
+        6
+      ],
+      "renderedPages": [
+        "verification/visual/07-router/page-001.png",
+        "verification/visual/07-router/page-002.png",
+        "verification/visual/07-router/page-006.png"
+      ],
+      "contactSheet": "verification/visual/07-router-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "08-lifecycle",
+      "pageCount": 7,
+      "chineseCharacterCount": 1048,
+      "inspectedPages": [
+        1,
+        3,
+        7
+      ],
+      "renderedPages": [
+        "verification/visual/08-lifecycle/page-001.png",
+        "verification/visual/08-lifecycle/page-003.png",
+        "verification/visual/08-lifecycle/page-007.png"
+      ],
+      "contactSheet": "verification/visual/08-lifecycle-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "09-engine",
+      "pageCount": 7,
+      "chineseCharacterCount": 1064,
+      "inspectedPages": [
+        1,
+        3,
+        7
+      ],
+      "renderedPages": [
+        "verification/visual/09-engine/page-001.png",
+        "verification/visual/09-engine/page-003.png",
+        "verification/visual/09-engine/page-007.png"
+      ],
+      "contactSheet": "verification/visual/09-engine-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "10-auth",
+      "pageCount": 6,
+      "chineseCharacterCount": 1044,
+      "inspectedPages": [
+        1,
+        2,
+        6
+      ],
+      "renderedPages": [
+        "verification/visual/10-auth/page-001.png",
+        "verification/visual/10-auth/page-002.png",
+        "verification/visual/10-auth/page-006.png"
+      ],
+      "contactSheet": "verification/visual/10-auth-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "11-maintenance",
+      "pageCount": 9,
+      "chineseCharacterCount": 1034,
+      "inspectedPages": [
+        1,
+        5,
+        9
+      ],
+      "renderedPages": [
+        "verification/visual/11-maintenance/page-001.png",
+        "verification/visual/11-maintenance/page-005.png",
+        "verification/visual/11-maintenance/page-009.png"
+      ],
+      "contactSheet": "verification/visual/11-maintenance-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "12-reconnect",
+      "pageCount": 7,
+      "chineseCharacterCount": 1032,
+      "inspectedPages": [
+        1,
+        2,
+        7
+      ],
+      "renderedPages": [
+        "verification/visual/12-reconnect/page-001.png",
+        "verification/visual/12-reconnect/page-002.png",
+        "verification/visual/12-reconnect/page-007.png"
+      ],
+      "contactSheet": "verification/visual/12-reconnect-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "13-offline",
+      "pageCount": 8,
+      "chineseCharacterCount": 1109,
+      "inspectedPages": [
+        1,
+        2,
+        8
+      ],
+      "renderedPages": [
+        "verification/visual/13-offline/page-001.png",
+        "verification/visual/13-offline/page-002.png",
+        "verification/visual/13-offline/page-008.png"
+      ],
+      "contactSheet": "verification/visual/13-offline-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "14-rooms",
+      "pageCount": 8,
+      "chineseCharacterCount": 1056,
+      "inspectedPages": [
+        1,
+        2,
+        8
+      ],
+      "renderedPages": [
+        "verification/visual/14-rooms/page-001.png",
+        "verification/visual/14-rooms/page-002.png",
+        "verification/visual/14-rooms/page-008.png"
+      ],
+      "contactSheet": "verification/visual/14-rooms-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "15-dynamodb-connections",
+      "pageCount": 8,
+      "chineseCharacterCount": 1056,
+      "inspectedPages": [
+        1,
+        2,
+        8
+      ],
+      "renderedPages": [
+        "verification/visual/15-dynamodb-connections/page-001.png",
+        "verification/visual/15-dynamodb-connections/page-002.png",
+        "verification/visual/15-dynamodb-connections/page-008.png"
+      ],
+      "contactSheet": "verification/visual/15-dynamodb-connections-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "16-dynamodb-features",
+      "pageCount": 13,
+      "chineseCharacterCount": 1154,
+      "inspectedPages": [
+        1,
+        3,
+        13
+      ],
+      "renderedPages": [
+        "verification/visual/16-dynamodb-features/page-001.png",
+        "verification/visual/16-dynamodb-features/page-003.png",
+        "verification/visual/16-dynamodb-features/page-013.png"
+      ],
+      "contactSheet": "verification/visual/16-dynamodb-features-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "17-redis-connections",
+      "pageCount": 6,
+      "chineseCharacterCount": 1025,
+      "inspectedPages": [
+        1,
+        2,
+        6
+      ],
+      "renderedPages": [
+        "verification/visual/17-redis-connections/page-001.png",
+        "verification/visual/17-redis-connections/page-002.png",
+        "verification/visual/17-redis-connections/page-006.png"
+      ],
+      "contactSheet": "verification/visual/17-redis-connections-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "18-redis-features",
+      "pageCount": 8,
+      "chineseCharacterCount": 1071,
+      "inspectedPages": [
+        1,
+        2,
+        8
+      ],
+      "renderedPages": [
+        "verification/visual/18-redis-features/page-001.png",
+        "verification/visual/18-redis-features/page-002.png",
+        "verification/visual/18-redis-features/page-008.png"
+      ],
+      "contactSheet": "verification/visual/18-redis-features-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "19-server-observability",
+      "pageCount": 8,
+      "chineseCharacterCount": 1060,
+      "inspectedPages": [
+        1,
+        3,
+        8
+      ],
+      "renderedPages": [
+        "verification/visual/19-server-observability/page-001.png",
+        "verification/visual/19-server-observability/page-003.png",
+        "verification/visual/19-server-observability/page-008.png"
+      ],
+      "contactSheet": "verification/visual/19-server-observability-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    },
+    {
+      "chapter": "20-integration",
+      "pageCount": 11,
+      "chineseCharacterCount": 1314,
+      "inspectedPages": [
+        1,
+        7,
+        11
+      ],
+      "renderedPages": [
+        "verification/visual/20-integration/page-001.png",
+        "verification/visual/20-integration/page-007.png",
+        "verification/visual/20-integration/page-011.png"
+      ],
+      "contactSheet": "verification/visual/20-integration-contact.png",
+      "blankPages": [],
+      "replacementGlyphs": 0,
+      "visualReview": "passed"
+    }
+  ]
+}

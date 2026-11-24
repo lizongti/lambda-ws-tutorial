@@ -1,0 +1,31 @@
+{
+  "number": 1,
+  "slug": "protocol",
+  "title": "JSON Envelope 与协议校验",
+  "pdf": "chapters/01-protocol/01-protocol.pdf",
+  "zip": "chapters/01-protocol/01-protocol.zip",
+  "snapshot": "work/snapshots/01-protocol",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": false,
+  "snippetCount": 4,
+  "zipEntryCount": 5,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/01-protocol",
+      "startedAt": "2026-11-24T06:49:10.351Z",
+      "exitCode": 0,
+      "log": "verification/chapters/01-protocol/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/01-protocol/01-protocol",
+      "startedAt": "2026-11-24T06:49:17.376Z",
+      "exitCode": 0,
+      "log": "verification/chapters/01-protocol/02-extracted-test.log"
+    }
+  ],
+  "pdfSha256": "48a5ac075539328d614d8f29f31bdae54381234b0f9f1ee7cf7191ed86de8cf6",
+  "zipSha256": "773021f007cf5506cc01bb7091c77db4131aa9ac74ea3094b0df551eaea129a0",
+  "verifiedAt": "2026-11-24T06:49:19.100Z"
+}

@@ -1,0 +1,790 @@
+{
+  "chapters": [
+    {
+      "number": 1,
+      "slug": "protocol",
+      "title": "JSON Envelope 与协议校验",
+      "pdf": "chapters/01-protocol/01-protocol.pdf",
+      "snapshot": "work/snapshots/01-protocol",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": false,
+      "snippetCount": 4,
+      "zipEntryCount": 5,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/01-protocol",
+          "startedAt": "2026-11-24T06:49:10.351Z",
+          "exitCode": 0,
+          "log": "verification/chapters/01-protocol/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/01-protocol/01-protocol",
+          "startedAt": "2026-11-24T06:49:17.376Z",
+          "exitCode": 0,
+          "log": "verification/chapters/01-protocol/02-extracted-test.log"
+        }
+      ],
+      "pdfSha256": "48a5ac075539328d614d8f29f31bdae54381234b0f9f1ee7cf7191ed86de8cf6",
+      "verifiedAt": "2026-11-24T06:49:19.100Z",
+      "codeDirectory": "chapters/01-protocol/",
+      "codeFileCount": 5,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "773021f007cf5506cc01bb7091c77db4131aa9ac74ea3094b0df551eaea129a0"
+    },
+    {
+      "number": 2,
+      "slug": "options-config",
+      "title": "Options、默认配置与 YAML",
+      "pdf": "chapters/02-options-config/02-options-config.pdf",
+      "snapshot": "work/snapshots/02-options-config",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": false,
+      "snippetCount": 4,
+      "zipEntryCount": 12,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/02-options-config",
+          "startedAt": "2026-11-24T06:49:19.121Z",
+          "exitCode": 0,
+          "log": "verification/chapters/02-options-config/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/02-options-config/02-options-config",
+          "startedAt": "2026-11-24T06:49:25.700Z",
+          "exitCode": 0,
+          "log": "verification/chapters/02-options-config/02-extracted-test.log"
+        }
+      ],
+      "pdfSha256": "13ec9b7d8272046f036c36b14a269ee05140b839bcb96d82e147481b15309d9a",
+      "verifiedAt": "2026-11-24T06:49:27.614Z",
+      "codeDirectory": "chapters/02-options-config/",
+      "codeFileCount": 12,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "c8275e49683ce2cae69e8765c88b7cc9b8b2e945075ba14f2df39a86ab049ab6"
+    },
+    {
+      "number": 3,
+      "slug": "store-contracts",
+      "title": "StateStore 契约与测试基座",
+      "pdf": "chapters/03-store-contracts/03-store-contracts.pdf",
+      "snapshot": "work/snapshots/03-store-contracts",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": false,
+      "snippetCount": 4,
+      "zipEntryCount": 13,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/03-store-contracts",
+          "startedAt": "2026-11-24T06:49:27.634Z",
+          "exitCode": 0,
+          "log": "verification/chapters/03-store-contracts/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/03-store-contracts/03-store-contracts",
+          "startedAt": "2026-11-24T06:49:33.809Z",
+          "exitCode": 0,
+          "log": "verification/chapters/03-store-contracts/02-extracted-test.log"
+        }
+      ],
+      "pdfSha256": "7cb3df34456c58011731237b064e3752307c77124e2e9e785c332f15c0a876be",
+      "verifiedAt": "2026-11-24T06:49:35.817Z",
+      "codeDirectory": "chapters/03-store-contracts/",
+      "codeFileCount": 13,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "7bf68834b6ba620fdbc3de13ccf7b1061e6dd829562d0d66f139d8ce06d6f0bc"
+    },
+    {
+      "number": 4,
+      "slug": "memory-connections",
+      "title": "Memory 连接与会话",
+      "pdf": "chapters/04-memory-connections/04-memory-connections.pdf",
+      "snapshot": "work/snapshots/04-memory-connections",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 16,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/04-memory-connections",
+          "startedAt": "2026-11-24T06:49:35.843Z",
+          "exitCode": 0,
+          "log": "verification/chapters/04-memory-connections/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/04-memory-connections/04-memory-connections",
+          "startedAt": "2026-11-24T06:49:42.393Z",
+          "exitCode": 0,
+          "log": "verification/chapters/04-memory-connections/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/04-memory-connections/04-memory-connections",
+          "startedAt": "2026-11-24T06:49:44.249Z",
+          "exitCode": 0,
+          "log": "verification/chapters/04-memory-connections/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "5e9b084416667c17ee3e4284ba03fb165489636c96412a7b0d3302b0845dc765",
+      "verifiedAt": "2026-11-24T06:49:49.436Z",
+      "codeDirectory": "chapters/04-memory-connections/",
+      "codeFileCount": 16,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "105415de9672cf0bc58c8e57edd5026bee855b62053de3eeb7cef695206bf0db"
+    },
+    {
+      "number": 5,
+      "slug": "memory-features",
+      "title": "Memory 房间、离线与幂等",
+      "pdf": "chapters/05-memory-features/05-memory-features.pdf",
+      "snapshot": "work/snapshots/05-memory-features",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 20,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/05-memory-features",
+          "startedAt": "2026-11-24T06:49:49.456Z",
+          "exitCode": 0,
+          "log": "verification/chapters/05-memory-features/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/05-memory-features/05-memory-features",
+          "startedAt": "2026-11-24T06:49:55.800Z",
+          "exitCode": 0,
+          "log": "verification/chapters/05-memory-features/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/05-memory-features/05-memory-features",
+          "startedAt": "2026-11-24T06:49:57.784Z",
+          "exitCode": 0,
+          "log": "verification/chapters/05-memory-features/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "c4d2fdbe0f01c46dce99cc75bd89fde548b6ab1db5bd2741ade58e825cde2190",
+      "verifiedAt": "2026-11-24T06:50:03.045Z",
+      "codeDirectory": "chapters/05-memory-features/",
+      "codeFileCount": 20,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "60fa55de04c162f5376df7cfe6fec06338522ecf08903179c4579bc3b37f37b9"
+    },
+    {
+      "number": 6,
+      "slug": "pusher",
+      "title": "Pusher 与 API Gateway 适配器",
+      "pdf": "chapters/06-pusher/06-pusher.pdf",
+      "snapshot": "work/snapshots/06-pusher",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 22,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/06-pusher",
+          "startedAt": "2026-11-24T06:50:03.064Z",
+          "exitCode": 0,
+          "log": "verification/chapters/06-pusher/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/06-pusher/06-pusher",
+          "startedAt": "2026-11-24T06:50:09.700Z",
+          "exitCode": 0,
+          "log": "verification/chapters/06-pusher/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/06-pusher/06-pusher",
+          "startedAt": "2026-11-24T06:50:12.425Z",
+          "exitCode": 0,
+          "log": "verification/chapters/06-pusher/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "8034d8a736427aa740a1690818073542810008d07ebc6fdfbeac343e4543308b",
+      "verifiedAt": "2026-11-24T06:50:17.994Z",
+      "codeDirectory": "chapters/06-pusher/",
+      "codeFileCount": 22,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "4a91d9d26bb4e95155d509d08702d8f77c3b50a6a9a743a67d5296a8d8d8ceee"
+    },
+    {
+      "number": 7,
+      "slug": "router",
+      "title": "Context、路由与中间件",
+      "pdf": "chapters/07-router/07-router.pdf",
+      "snapshot": "work/snapshots/07-router",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": false,
+      "snippetCount": 4,
+      "zipEntryCount": 25,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/07-router",
+          "startedAt": "2026-11-24T06:50:18.013Z",
+          "exitCode": 0,
+          "log": "verification/chapters/07-router/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/07-router/07-router",
+          "startedAt": "2026-11-24T06:50:24.554Z",
+          "exitCode": 0,
+          "log": "verification/chapters/07-router/02-extracted-test.log"
+        }
+      ],
+      "pdfSha256": "7c8699072ce6dcba817107c572cd8939afbf3f9e3c99dd59c668ca7b57d9321d",
+      "verifiedAt": "2026-11-24T06:50:26.867Z",
+      "codeDirectory": "chapters/07-router/",
+      "codeFileCount": 25,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "f61f06d94b9d1a163ae53f66cf3079f1a69346500b8488fce6032384f9934ab4"
+    },
+    {
+      "number": 8,
+      "slug": "lifecycle",
+      "title": "API Gateway 事件与生命周期",
+      "pdf": "chapters/08-lifecycle/08-lifecycle.pdf",
+      "snapshot": "work/snapshots/08-lifecycle",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 37,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/08-lifecycle",
+          "startedAt": "2026-11-24T06:50:26.886Z",
+          "exitCode": 0,
+          "log": "verification/chapters/08-lifecycle/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/08-lifecycle/08-lifecycle",
+          "startedAt": "2026-11-24T06:50:34.020Z",
+          "exitCode": 0,
+          "log": "verification/chapters/08-lifecycle/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/08-lifecycle/08-lifecycle",
+          "startedAt": "2026-11-24T06:50:36.927Z",
+          "exitCode": 0,
+          "log": "verification/chapters/08-lifecycle/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "db4921b2043ce5fb320ba6ea41c419c2d987b0faf058e4d8a9648964c7034e37",
+      "verifiedAt": "2026-11-24T06:50:43.736Z",
+      "codeDirectory": "chapters/08-lifecycle/",
+      "codeFileCount": 37,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "11e9611503540535ae52a92607f69393f89408f09cc86d5315a7c6031a04b7f6"
+    },
+    {
+      "number": 9,
+      "slug": "engine",
+      "title": "Engine 与同连接消息闭环",
+      "pdf": "chapters/09-engine/09-engine.pdf",
+      "snapshot": "work/snapshots/09-engine",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 41,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/09-engine",
+          "startedAt": "2026-11-24T06:50:43.754Z",
+          "exitCode": 0,
+          "log": "verification/chapters/09-engine/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/09-engine/09-engine",
+          "startedAt": "2026-11-24T06:50:51.595Z",
+          "exitCode": 0,
+          "log": "verification/chapters/09-engine/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/09-engine/09-engine",
+          "startedAt": "2026-11-24T06:50:54.375Z",
+          "exitCode": 0,
+          "log": "verification/chapters/09-engine/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "dc5261edc14fb7fe817961905afc0549b85b53c195a49cf37f604c667a48c8b0",
+      "verifiedAt": "2026-11-24T06:51:01.226Z",
+      "codeDirectory": "chapters/09-engine/",
+      "codeFileCount": 41,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "7bab5278cf77a2e0e7b495fd04cdc1f9401402cd6c13a3066c2c1e06d36621e8"
+    },
+    {
+      "number": 10,
+      "slug": "auth",
+      "title": "认证、授权与 Principal",
+      "pdf": "chapters/10-auth/10-auth.pdf",
+      "snapshot": "work/snapshots/10-auth",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 42,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/10-auth",
+          "startedAt": "2026-11-24T06:51:01.245Z",
+          "exitCode": 0,
+          "log": "verification/chapters/10-auth/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/10-auth/10-auth",
+          "startedAt": "2026-11-24T06:51:08.641Z",
+          "exitCode": 0,
+          "log": "verification/chapters/10-auth/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/10-auth/10-auth",
+          "startedAt": "2026-11-24T06:51:11.424Z",
+          "exitCode": 0,
+          "log": "verification/chapters/10-auth/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "c6bc79b3917b9be9d864401c0ebe69ddb6d9cf3f0d086610d0f847899dbd1b6d",
+      "verifiedAt": "2026-11-24T06:51:18.065Z",
+      "codeDirectory": "chapters/10-auth/",
+      "codeFileCount": 42,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "34e943f4b83a49f720ebafc2a31b07bf6e44222c0439024f5df11e91f058dbec"
+    },
+    {
+      "number": 11,
+      "slug": "maintenance",
+      "title": "心跳与 Maintenance",
+      "pdf": "chapters/11-maintenance/11-maintenance.pdf",
+      "snapshot": "work/snapshots/11-maintenance",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 45,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/11-maintenance",
+          "startedAt": "2026-11-24T06:51:18.082Z",
+          "exitCode": 0,
+          "log": "verification/chapters/11-maintenance/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/11-maintenance/11-maintenance",
+          "startedAt": "2026-11-24T06:51:25.349Z",
+          "exitCode": 0,
+          "log": "verification/chapters/11-maintenance/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/11-maintenance/11-maintenance",
+          "startedAt": "2026-11-24T06:51:28.177Z",
+          "exitCode": 0,
+          "log": "verification/chapters/11-maintenance/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "e68c891fa9651dbdab58c585d5ae49b81f741204530675a6c1948fd43e0e54cc",
+      "verifiedAt": "2026-11-24T06:51:34.815Z",
+      "codeDirectory": "chapters/11-maintenance/",
+      "codeFileCount": 45,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "4cbb87a52c91debeb9ca0f91843aa6e8c8c4c22d980b8185aa59ec2b47e21806"
+    },
+    {
+      "number": 12,
+      "slug": "reconnect",
+      "title": "Session 与原子重连",
+      "pdf": "chapters/12-reconnect/12-reconnect.pdf",
+      "snapshot": "work/snapshots/12-reconnect",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 46,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/12-reconnect",
+          "startedAt": "2026-11-24T06:51:34.833Z",
+          "exitCode": 0,
+          "log": "verification/chapters/12-reconnect/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/12-reconnect/12-reconnect",
+          "startedAt": "2026-11-24T06:51:42.119Z",
+          "exitCode": 0,
+          "log": "verification/chapters/12-reconnect/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/12-reconnect/12-reconnect",
+          "startedAt": "2026-11-24T06:51:45.678Z",
+          "exitCode": 0,
+          "log": "verification/chapters/12-reconnect/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "44f41952a93196c21adfa2552ee6bf7fe70e1d7f4ed0caa96b635c96ecc017ab",
+      "verifiedAt": "2026-11-24T06:51:52.206Z",
+      "codeDirectory": "chapters/12-reconnect/",
+      "codeFileCount": 46,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "c980883093d6c27f3c447cb819a0c9ffa25f3b975a04320676dcdfbb0c3133e1"
+    },
+    {
+      "number": 13,
+      "slug": "offline",
+      "title": "离线队列、确认与补发",
+      "pdf": "chapters/13-offline/13-offline.pdf",
+      "snapshot": "work/snapshots/13-offline",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 47,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/13-offline",
+          "startedAt": "2026-11-24T06:51:52.224Z",
+          "exitCode": 0,
+          "log": "verification/chapters/13-offline/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/13-offline/13-offline",
+          "startedAt": "2026-11-24T06:51:59.584Z",
+          "exitCode": 0,
+          "log": "verification/chapters/13-offline/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/13-offline/13-offline",
+          "startedAt": "2026-11-24T06:52:02.954Z",
+          "exitCode": 0,
+          "log": "verification/chapters/13-offline/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "afd52fa79e9eddb0236415741641ab66881869754ccfb65c61eebcbc7517f5bb",
+      "verifiedAt": "2026-11-24T06:52:10.707Z",
+      "codeDirectory": "chapters/13-offline/",
+      "codeFileCount": 47,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "11bb3cec843681806c203b9c3faa4c8854c270ef8dd0483217e0e896fbd78794"
+    },
+    {
+      "number": 14,
+      "slug": "rooms",
+      "title": "房间与有界广播",
+      "pdf": "chapters/14-rooms/14-rooms.pdf",
+      "snapshot": "work/snapshots/14-rooms",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 49,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/14-rooms",
+          "startedAt": "2026-11-24T06:52:10.725Z",
+          "exitCode": 0,
+          "log": "verification/chapters/14-rooms/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/14-rooms/14-rooms",
+          "startedAt": "2026-11-24T06:52:19.263Z",
+          "exitCode": 0,
+          "log": "verification/chapters/14-rooms/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/14-rooms/14-rooms",
+          "startedAt": "2026-11-24T06:52:22.063Z",
+          "exitCode": 0,
+          "log": "verification/chapters/14-rooms/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "bae86512d1605cd5360b7eeb68a6d928eb7f20334b163646df4746f1aa72a44d",
+      "verifiedAt": "2026-11-24T06:52:28.749Z",
+      "codeDirectory": "chapters/14-rooms/",
+      "codeFileCount": 49,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "d8e9601b7c333ce44a7a7b415f5cc1739004e5efe107634c8b91b545c9436818"
+    },
+    {
+      "number": 15,
+      "slug": "dynamodb-connections",
+      "title": "DynamoDB 连接与会话",
+      "pdf": "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+      "snapshot": "work/snapshots/15-dynamodb-connections",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 54,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/15-dynamodb-connections",
+          "startedAt": "2026-11-24T06:52:28.767Z",
+          "exitCode": 0,
+          "log": "verification/chapters/15-dynamodb-connections/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/15-dynamodb-connections/15-dynamodb-connections",
+          "startedAt": "2026-11-24T06:52:36.287Z",
+          "exitCode": 0,
+          "log": "verification/chapters/15-dynamodb-connections/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/15-dynamodb-connections/15-dynamodb-connections",
+          "startedAt": "2026-11-24T06:52:39.303Z",
+          "exitCode": 0,
+          "log": "verification/chapters/15-dynamodb-connections/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "34c7c7399ce1e6f605e88c88fd28b5989cd9f78669ec260879f9e108f1d40303",
+      "verifiedAt": "2026-11-24T06:52:46.179Z",
+      "codeDirectory": "chapters/15-dynamodb-connections/",
+      "codeFileCount": 54,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "2fd91755f5b89429923deb11511363b5676b959fdcfc522d9fdaa6d700a5f371"
+    },
+    {
+      "number": 16,
+      "slug": "dynamodb-features",
+      "title": "DynamoDB 房间、离线与幂等",
+      "pdf": "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+      "snapshot": "work/snapshots/16-dynamodb-features",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 58,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/16-dynamodb-features",
+          "startedAt": "2026-11-24T06:52:46.197Z",
+          "exitCode": 0,
+          "log": "verification/chapters/16-dynamodb-features/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/16-dynamodb-features/16-dynamodb-features",
+          "startedAt": "2026-11-24T06:52:54.075Z",
+          "exitCode": 0,
+          "log": "verification/chapters/16-dynamodb-features/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/16-dynamodb-features/16-dynamodb-features",
+          "startedAt": "2026-11-24T06:52:57.140Z",
+          "exitCode": 0,
+          "log": "verification/chapters/16-dynamodb-features/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "d1d253c6085614b071a138a256d6d0f4dcb2f98803201780a3ffacc90afe63f9",
+      "verifiedAt": "2026-11-24T06:53:04.199Z",
+      "codeDirectory": "chapters/16-dynamodb-features/",
+      "codeFileCount": 58,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "1ef718f4f57676889eaf890aaa35a77a9ac9ffed4ca099e67c07a9db2ae3cfe4"
+    },
+    {
+      "number": 17,
+      "slug": "redis-connections",
+      "title": "Redis 连接与会话",
+      "pdf": "chapters/17-redis-connections/17-redis-connections.pdf",
+      "snapshot": "work/snapshots/17-redis-connections",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 61,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/17-redis-connections",
+          "startedAt": "2026-11-24T06:53:04.216Z",
+          "exitCode": 0,
+          "log": "verification/chapters/17-redis-connections/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/17-redis-connections/17-redis-connections",
+          "startedAt": "2026-11-24T06:53:12.340Z",
+          "exitCode": 0,
+          "log": "verification/chapters/17-redis-connections/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/17-redis-connections/17-redis-connections",
+          "startedAt": "2026-11-24T06:53:15.909Z",
+          "exitCode": 0,
+          "log": "verification/chapters/17-redis-connections/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "7048cccc3e544086b24718dfcc6d702eb9264166d7bf487f4e002ae97ce8bff0",
+      "verifiedAt": "2026-11-24T06:53:23.935Z",
+      "codeDirectory": "chapters/17-redis-connections/",
+      "codeFileCount": 61,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "c3f175f59502e70efe43df77227c4d08eb42fac3c7064d87747117f27c34a83e"
+    },
+    {
+      "number": 18,
+      "slug": "redis-features",
+      "title": "Redis 房间、离线与幂等",
+      "pdf": "chapters/18-redis-features/18-redis-features.pdf",
+      "snapshot": "work/snapshots/18-redis-features",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 65,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/18-redis-features",
+          "startedAt": "2026-11-24T06:53:23.953Z",
+          "exitCode": 0,
+          "log": "verification/chapters/18-redis-features/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/18-redis-features/18-redis-features",
+          "startedAt": "2026-11-24T06:53:32.058Z",
+          "exitCode": 0,
+          "log": "verification/chapters/18-redis-features/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/18-redis-features/18-redis-features",
+          "startedAt": "2026-11-24T06:53:35.573Z",
+          "exitCode": 0,
+          "log": "verification/chapters/18-redis-features/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "4d7296a8f3b9c8fd70d17c06fccfd1f8a1f14d1726d8bc10c081d424b20893f8",
+      "verifiedAt": "2026-11-24T06:53:43.739Z",
+      "codeDirectory": "chapters/18-redis-features/",
+      "codeFileCount": 65,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "66ad98222c151019cb0d04933b2fd824abf9d9c591d43308ecaa9b981bf4532b"
+    },
+    {
+      "number": 19,
+      "slug": "server-observability",
+      "title": "server、Factory 与可观测性",
+      "pdf": "chapters/19-server-observability/19-server-observability.pdf",
+      "snapshot": "work/snapshots/19-server-observability",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 4,
+      "zipEntryCount": 117,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/19-server-observability",
+          "startedAt": "2026-11-24T06:53:43.756Z",
+          "exitCode": 0,
+          "log": "verification/chapters/19-server-observability/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/19-server-observability/19-server-observability",
+          "startedAt": "2026-11-24T06:53:52.438Z",
+          "exitCode": 0,
+          "log": "verification/chapters/19-server-observability/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/19-server-observability/19-server-observability",
+          "startedAt": "2026-11-24T06:53:56.270Z",
+          "exitCode": 0,
+          "log": "verification/chapters/19-server-observability/03-extracted-race.log"
+        }
+      ],
+      "pdfSha256": "9cbbfb6e3a09d9f64fd4f75b149e2f72d7c4147c3b3c1900afe943f0a3bce55c",
+      "verifiedAt": "2026-11-24T06:54:05.323Z",
+      "codeDirectory": "chapters/19-server-observability/",
+      "codeFileCount": 117,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "b26a81ef1c29b856c26db2beb5a3ef6dd0e456b079e7ba7ccdc061de8889debf"
+    },
+    {
+      "number": 20,
+      "slug": "integration",
+      "title": "跨后端集成与故障注入",
+      "pdf": "chapters/20-integration/20-integration.pdf",
+      "snapshot": "work/snapshots/20-integration",
+      "testCommand": "go test -mod=readonly -count=1 ./...",
+      "race": true,
+      "snippetCount": 3,
+      "zipEntryCount": 120,
+      "commands": [
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/snapshots/20-integration",
+          "startedAt": "2026-11-24T06:54:05.340Z",
+          "exitCode": 0,
+          "log": "verification/chapters/20-integration/01-work-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -count=1 ./...",
+          "cwd": "work/extract/20-integration/20-integration",
+          "startedAt": "2026-11-24T06:54:15.547Z",
+          "exitCode": 0,
+          "log": "verification/chapters/20-integration/02-extracted-test.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=1 ./...",
+          "cwd": "work/extract/20-integration/20-integration",
+          "startedAt": "2026-11-24T06:54:22.096Z",
+          "exitCode": 0,
+          "log": "verification/chapters/20-integration/03-extracted-race.log"
+        },
+        {
+          "command": "go vet -mod=readonly ./...",
+          "cwd": "work/extract/20-integration/20-integration",
+          "startedAt": "2026-11-24T06:54:36.983Z",
+          "exitCode": 0,
+          "log": "verification/chapters/20-integration/04-vet.log"
+        },
+        {
+          "command": "go test -mod=readonly -race -count=20 ./tests -run TestWSIntegrationConcurrentDisconnectReconnectReplayAck|TestWSIntegrationRaceBroadcastAndCleanup",
+          "cwd": "work/extract/20-integration/20-integration",
+          "startedAt": "2026-11-24T06:54:39.733Z",
+          "exitCode": 0,
+          "log": "verification/chapters/20-integration/05-concurrency-repeat.log"
+        }
+      ],
+      "pdfSha256": "e5de6c0ae50893f793e029e5c714ff56624353acb2707009f2e51cee0f8e11ce",
+      "verifiedAt": "2026-11-24T06:54:56.027Z",
+      "codeDirectory": "chapters/20-integration/",
+      "codeFileCount": 120,
+      "codeExpanded": true,
+      "expandedFromZipSha256": "a6e3ca7c1c211098106166b2f623f5f8ccc828f001f329c78442c294899a8f48"
+    }
+  ]
+}

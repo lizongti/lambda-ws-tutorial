@@ -1,0 +1,173 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 06 节：Pusher 与 API Gateway 适配器</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 06 节：Pusher 与 API Gateway 适配器</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Pusher 与 API Gateway 适配器”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>Lambda 不持有客户端 socket。所有业务出站消息都必须通过 API Gateway Management API 的 PostToConnection 发回已有 Connection_ID。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>Pusher</strong>：只接收 connectionID 和序列化字节的传输抽象。</li>
+<li>解释并应用 <strong>gone</strong>：目标连接已失效，应清理而不是继续暂时性重试。</li>
+<li>解释并应用 <strong>有界退避</strong>：仅 throttled/unavailable 等暂时错误按上限重试。</li>
+</ul>
+<p>本章与前一节的关系：保留第 05 节“Memory 房间、离线与幂等”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>删除 stage_runtime_dependencies.go 中的 Pusher、SleepFunc 和 endpoint 过渡实现，改用本章真实 pusher.go 与 apigateway_pusher.go。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>Pusher</h3>
+<p>只接收 connectionID 和序列化字节的传输抽象。</p>
+<h3>gone</h3>
+<p>目标连接已失效，应清理而不是继续暂时性重试。</p>
+<h3>有界退避</h3>
+<p>仅 throttled/unavailable 等暂时错误按上限重试。</p>
+<h3>实现约束</h3>
+<ol>
+<li>管理 endpoint 只来自可信部署配置，不从消息 payload 构造。</li>
+<li>请求体在调用前后复制，FakePusher 记录也避免别名。</li>
+<li>Lambda 返回值只表示集成状态，不替代应用推送。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 定义推送抽象</h3>
+<p>接口足够小，生产使用 AWS 适配器，测试使用 FakePusher。</p>
+<p>在 <code>ws/pusher.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type Pusher interface {
+	PostToConnection(ctx context.Context, connectionID string, body []byte) error
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 分类推送错误</h3>
+<p>gone/invalid 永久失败，throttled/unavailable 才标记 Retryable。</p>
+<p>在 <code>ws/pusher.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func NewPushError(kind PushErrorKind, cause error) *PushError {
+	switch kind {
+	case PushErrorGone, PushErrorInvalid:
+		return &amp;PushError{Kind: kind, Cause: cause}
+	case PushErrorThrottled, PushErrorUnavailable:
+		return &amp;PushError{Kind: kind, Retryable: true, Cause: cause}
+	default:
+		return &amp;PushError{Kind: PushErrorUnknown, Cause: cause}
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 构造可信 endpoint</h3>
+<p>校验 API ID、region、stage，并按 AWS 分区选择域名。</p>
+<p>在 <code>ws/apigateway_pusher.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func BuildAPIGatewayManagementEndpoint(apiID, region, stage string) (string, error) {
+	for name, value := range map[string]string{&quot;API ID&quot;: apiID, &quot;region&quot;: region, &quot;stage&quot;: stage} {
+		if !validEndpointComponent(value) {
+			return &quot;&quot;, NewPushError(PushErrorInvalid, errors.New(name+&quot; is empty or contains invalid characters&quot;))
+		}
+	}
+	domain := &quot;amazonaws.com&quot;
+	if strings.HasPrefix(strings.ToLower(region), &quot;cn-&quot;) {
+		domain = &quot;amazonaws.com.cn&quot;
+	}
+	return &quot;https://&quot; + apiID + &quot;.execute-api.&quot; + region + &quot;.&quot; + domain + &quot;/&quot; + stage, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter06FakePusherAndErrors(t *testing.T) {
+	gone := ws.NewPushError(ws.PushErrorGone, errors.New(&quot;410&quot;))
+	temporary := ws.NewPushError(ws.PushErrorThrottled, errors.New(&quot;limited&quot;))
+	if ws.IsRetryablePushError(gone) || !ws.IsPushGone(gone) || !ws.IsRetryablePushError(temporary) {
+		t.Fatal(&quot;push error classification mismatch&quot;)
+	}
+	pusher := ws.NewFakePusher(nil)
+	if err := pusher.PostToConnection(context.Background(), &quot;c1&quot;, []byte(`{&quot;ok&quot;:true}`)); err != nil {
+		t.Fatal(err)
+	}
+	calls := pusher.Calls()
+	if len(calls) != 1 || calls[0].ConnectionID != &quot;c1&quot; || string(calls[0].Body) != `{&quot;ok&quot;:true}` {
+		t.Fatalf(&quot;calls=%#v&quot;, calls)
+	}
+	calls[0].Body[0] = &#39;X&#39;
+	if string(pusher.Calls()[0].Body)[0] == &#39;X&#39; {
+		t.Fatal(&quot;recorded body aliases caller mutation&quot;)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>FakePusher 记录同一 Connection_ID 和原始 JSON，gone 与暂时错误分类正确。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>尝试在 Lambda 中保存可写 WebSocket。</li>
+<li>对 410 Gone 做指数退避。</li>
+<li>让客户端 Envelope 指定任意管理 endpoint。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Pusher 与 API Gateway 适配器”。FakePusher 记录同一 Connection_ID 和原始 JSON，gone 与暂时错误分类正确。</p>
+<p>下一节：第 07 节“Context、路由与中间件”。</p>
+</body></html>

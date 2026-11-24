@@ -1,0 +1,18 @@
+address: ":8080"
+mode:
+  debug: true
+  cors: true
+staticLink:
+  - srcPath: "/v2"
+    dstPath: "/api/flipper/v2/access"
+    methods: ["POST"]
+  - srcPath: "/auth"
+    dstPath: "/api/flipper/v2/authenticate"
+prefixLink:
+  - srcPrefix: "/api"
+    dstPrefix: "/v1"
+    methods: ["GET", "POST"]
+pageNotFound:
+  - path: "/api/flipper/v2/disguise"
+    methods: ["POST"]
+  - path: "/health-check"

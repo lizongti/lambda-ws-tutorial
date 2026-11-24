@@ -1,0 +1,38 @@
+{
+  "number": 19,
+  "slug": "server-observability",
+  "title": "server、Factory 与可观测性",
+  "pdf": "chapters/19-server-observability/19-server-observability.pdf",
+  "zip": "chapters/19-server-observability/19-server-observability.zip",
+  "snapshot": "work/snapshots/19-server-observability",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 117,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/19-server-observability",
+      "startedAt": "2026-11-24T06:53:43.756Z",
+      "exitCode": 0,
+      "log": "verification/chapters/19-server-observability/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/19-server-observability/19-server-observability",
+      "startedAt": "2026-11-24T06:53:52.438Z",
+      "exitCode": 0,
+      "log": "verification/chapters/19-server-observability/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/19-server-observability/19-server-observability",
+      "startedAt": "2026-11-24T06:53:56.270Z",
+      "exitCode": 0,
+      "log": "verification/chapters/19-server-observability/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "9cbbfb6e3a09d9f64fd4f75b149e2f72d7c4147c3b3c1900afe943f0a3bce55c",
+  "zipSha256": "b26a81ef1c29b856c26db2beb5a3ef6dd0e456b079e7ba7ccdc061de8889debf",
+  "verifiedAt": "2026-11-24T06:54:05.323Z"
+}

@@ -1,0 +1,242 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 18 节：Redis 房间、离线与幂等</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 18 节：Redis 房间、离线与幂等</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Redis 房间、离线与幂等”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>本节完成 Redis 房间、离线和幂等实现，重点保证脚本原子性与各类索引的过期清理。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>房间反向索引</strong>：连接失效时可找到并删除所有相关成员。</li>
+<li>解释并应用 <strong>Lua 队列</strong>：sequence 分配、条数上限与溢出在同一原子路径完成。</li>
+<li>解释并应用 <strong>幂等窗口</strong>：set-if-not-exists 加过期时间预留 messageId。</li>
+</ul>
+<p>本章与前一节的关系：保留第 17 节“Redis 连接与会话”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>恢复 Redis 的完整 StateStore 编译断言，并用真实房间、离线和幂等操作完成共享后端。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>房间反向索引</h3>
+<p>连接失效时可找到并删除所有相关成员。</p>
+<h3>Lua 队列</h3>
+<p>sequence 分配、条数上限与溢出在同一原子路径完成。</p>
+<h3>幂等窗口</h3>
+<p>set-if-not-exists 加过期时间预留 messageId。</p>
+<h3>实现约束</h3>
+<ol>
+<li>离线和成员读取使用稳定顺序与有界批次。</li>
+<li>Ack/MarkSent 都按 generation 做条件迁移。</li>
+<li>主体 key 过期时同步维护索引，避免无限残留。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 原子清理房间成员</h3>
+<p>Lua 同时处理成员集合与 Connection_ID 反向索引。</p>
+<p>在 <code>ws/store/redis/room.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) RemoveConnection(ctx context.Context, connectionID string) error {
+	const op = &quot;RemoveConnection&quot;
+	if err := checkContext(ctx, op); err != nil {
+		return err
+	}
+	if connectionID == &quot;&quot; {
+		return invalid(op, &quot;connection ID is required&quot;)
+	}
+	if err := removeConnectionScript.Run(ctx, s.client,
+		[]string{s.connectionRoomsKey(connectionID)}, s.prefix, connectionID).Err(); err != nil {
+		return backendError(op, err)
+	}
+	return nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 有界离线 Append</h3>
+<p>脚本协调 sequence、消息 body、队列计数与 reject/evict 行为。</p>
+<p>在 <code>ws/store/redis/offline.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) Append(ctx context.Context, msg wsstore.OfflineMessage) error {
+	const op = &quot;Append&quot;
+	if err := checkContext(ctx, op); err != nil {
+		return err
+	}
+	if msg.SessionID == &quot;&quot; || msg.MessageID == &quot;&quot; {
+		return invalid(op, &quot;session ID and message ID are required&quot;)
+	}
+	if s.offlineQueueLimit &lt;= 0 {
+		return invalid(op, &quot;offline queue limit must be positive&quot;)
+	}
+	if s.offlineOverflowPolicy != wsstore.OfflineOverflowRejectNew &amp;&amp;
+		s.offlineOverflowPolicy != wsstore.OfflineOverflowEvictOldest {
+		return invalid(op, &quot;unknown offline overflow policy&quot;)
+	}
+	now := s.now()
+	if !msg.ExpiresAt.IsZero() &amp;&amp; !msg.ExpiresAt.After(now) {
+		return invalid(op, &quot;offline message is already expired&quot;)
+	}
+	if msg.CreatedAt.IsZero() {
+		msg.CreatedAt = now
+	}
+	msg.State = wsstore.OfflineMessageStatePending
+	msg.SentAt = nil
+	encoded, err := encodeOfflineMessage(msg)
+	if err != nil {
+		return dataError(op, err)
+	}
+	result, err := appendOfflineScript.Run(ctx, s.client, []string{
+		s.sessionKey(msg.SessionID), s.offlineSequenceKey(msg.SessionID), s.offlineQueueKey(msg.SessionID),
+		s.offlineExpiryKey(), s.offlineMessageKey(msg.SessionID, msg.MessageID),
+	}, msg.SessionID, msg.MessageID, now.UnixNano(), msg.Generation, encoded,
+		ttlMilliseconds(msg.ExpiresAt, now), s.offlineQueueLimit, string(s.offlineOverflowPolicy),
+		expirationNano(msg.ExpiresAt), s.prefix,
+	).Result()
+	if err != nil {
+		return backendError(op, err)
+	}
+	code, err := scriptInt(result)
+	if err != nil {
+		return dataError(op, err)
+	}
+	switch code {
+	case 1:
+		return notFound(op, &quot;session not found&quot;)
+	case 2:
+		return conflict(op, &quot;offline message generation or ID conflicts with current state&quot;)
+	case 3:
+		return quotaExceeded(op, &quot;offline queue is full&quot;)
+	default:
+		return nil
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 世代条件 Ack</h3>
+<p>当前 generation 不匹配时不能删除消息，重复确认保持幂等。</p>
+<p>在 <code>ws/store/redis/offline.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) Ack(ctx context.Context, sessionID, messageID string, generation uint64) error {
+	const op = &quot;Ack&quot;
+	if err := checkContext(ctx, op); err != nil {
+		return err
+	}
+	if sessionID == &quot;&quot; || messageID == &quot;&quot; {
+		return invalid(op, &quot;session ID and message ID are required&quot;)
+	}
+	ref, err := encodeRef(sessionID, messageID)
+	if err != nil {
+		return dataError(op, err)
+	}
+	result, err := ackOfflineScript.Run(ctx, s.client, []string{
+		s.sessionKey(sessionID), s.offlineMessageKey(sessionID, messageID),
+		s.offlineQueueKey(sessionID), s.offlineExpiryKey(),
+	}, messageID, s.now().UnixNano(), generation, ref).Result()
+	if err != nil {
+		return backendError(op, err)
+	}
+	return offlineMutationError(op, result, err)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter18RedisRoomOfflineIdempotency(t *testing.T) {
+	ctx := context.Background()
+	store, now := chapter17Store(t)
+	if err := store.CreateSession(ctx, wsstore.Session{SessionID: &quot;redis-feature&quot;, CurrentConnectionID: &quot;redis-feature-c&quot;, Generation: 1, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Join(ctx, wsstore.RoomMember{RoomID: &quot;r&quot;, SessionID: &quot;redis-feature&quot;, ConnectionID: &quot;redis-feature-c&quot;, Generation: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Append(ctx, wsstore.OfflineMessage{SessionID: &quot;redis-feature&quot;, MessageID: &quot;m&quot;, Generation: 1, Envelope: []byte(`{&quot;ok&quot;:true}`), CreatedAt: now, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	pending, err := store.ListPending(ctx, &quot;redis-feature&quot;, 10)
+	if err != nil || len(pending) != 1 {
+		t.Fatalf(&quot;pending=%#v err=%v&quot;, pending, err)
+	}
+	_, acquired, err := store.BeginIdempotency(ctx, wsstore.IdempotencyRecord{SessionID: &quot;redis-feature&quot;, MessageID: &quot;i&quot;, ExpiresAt: now.Add(time.Minute)})
+	if err != nil || !acquired {
+		t.Fatalf(&quot;acquired=%t err=%v&quot;, acquired, err)
+	}
+	members, _, err := store.Members(ctx, &quot;r&quot;, 10, &quot;&quot;)
+	if err != nil || len(members) != 1 {
+		t.Fatalf(&quot;members=%#v err=%v&quot;, members, err)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>miniredis 上房间、队列与幂等契约通过；真实 Redis 未纳入验证声明。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>把多条独立 Redis 命令误当成一个原子操作。</li>
+<li>只清理消息 body 而忘记索引。</li>
+<li>无界读取大房间或长离线队列。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Redis 房间、离线与幂等”。miniredis 上房间、队列与幂等契约通过；真实 Redis 未纳入验证声明。</p>
+<p>下一节：第 19 节“server、Factory 与可观测性”。</p>
+</body></html>

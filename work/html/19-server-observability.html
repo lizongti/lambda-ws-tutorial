@@ -1,0 +1,247 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 19 节：server、Factory 与可观测性</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 19 节：server、Factory 与可观测性</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“server、Factory 与可观测性”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>核心框架和三后端已经完整，本节接入现有 server、统一依赖构造与资源所有权，并提供安全日志和指标钩子。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>Factory</strong>：构造一套一致后端与 Pusher，只关闭自己创建的资源。</li>
+<li>解释并应用 <strong>lambda: ws</strong>：沿用现有 server Option/YAML 分支，不改变其他 Lambda 类型。</li>
+<li>解释并应用 <strong>可观测性</strong>：结构化 allowlist 字段记录生命周期和投递结果，不记录 payload/token。</li>
+</ul>
+<p>本章与前一节的关系：保留第 18 节“Redis 房间、离线与幂等”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>用 factory.go 替换 stage_factory.go 的简单构造器，新增一致后端选择、AWS/Redis 客户端构造和明确的资源所有权。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>Factory</h3>
+<p>构造一套一致后端与 Pusher，只关闭自己创建的资源。</p>
+<h3>lambda: ws</h3>
+<p>沿用现有 server Option/YAML 分支，不改变其他 Lambda 类型。</p>
+<h3>可观测性</h3>
+<p>结构化 allowlist 字段记录生命周期和投递结果，不记录 payload/token。</p>
+<h3>实现约束</h3>
+<ol>
+<li>显式注入的 StateStore/Pusher 优先，所有权仍属于调用方。</li>
+<li>Factory.Build 只做构造与配置加载，不主动 ping 外部服务。</li>
+<li>Close 逆序关闭自建资源且可重复调用。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 构造完整 Engine</h3>
+<p>验证配置、选择 StateStore 和 Pusher 后创建 Engine，失败时联合同步清理已创建资源。</p>
+<p>在 <code>ws/factory.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (f *Factory) Build() (*Engine, error) {
+	if f == nil {
+		return nil, invalidConfig(&quot;factory&quot;, &quot;must not be nil&quot;)
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.closed {
+		return nil, invalidConfig(&quot;factory&quot;, &quot;is closed&quot;)
+	}
+	if f.built {
+		return nil, invalidConfig(&quot;factory&quot;, &quot;can build only one engine&quot;)
+	}
+	f.built = true
+	if f.options == nil {
+		return nil, invalidConfig(&quot;options&quot;, &quot;must not be nil&quot;)
+	}
+
+	options := *f.options
+	if err := options.Validate(); err != nil {
+		return nil, err
+	}
+	if options.SharedDeployment &amp;&amp; !nilDependency(options.StateStore) {
+		if _, ok := options.StateStore.(*memorystore.Store); ok {
+			return nil, invalidConfig(&quot;stateStore&quot;, &quot;memory cannot be used for a shared deployment&quot;)
+		}
+	}
+
+	stateStore, closer, err := f.buildStateStore(&amp;options)
+	if err != nil {
+		return nil, err
+	}
+	if closer != nil {
+		f.closers = append(f.closers, closer)
+	}
+	options.StateStore = stateStore
+
+	if nilDependency(options.Pusher) {
+		pusher, err := f.buildPusher(&amp;options)
+		if err != nil {
+			return nil, errors.Join(err, f.closeLocked())
+		}
+		options.Pusher = pusher
+	}
+
+	engine, err := NewEngine(&amp;options)
+	if err != nil {
+		return nil, errors.Join(err, f.closeLocked())
+	}
+	return engine, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 选择单一后端</h3>
+<p>memory、dynamodb、redis 只选一套完整实现，注入依赖优先。</p>
+<p>在 <code>ws/factory.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (f *Factory) buildStateStore(options *Options) (wsstore.StateStore, io.Closer, error) {
+	if !nilDependency(options.StateStore) {
+		return options.StateStore, nil, nil
+	}
+
+	switch options.State.Backend {
+	case BackendMemory:
+		return memorystore.New(
+			memorystore.WithClock(options.Clock.Now),
+			memorystore.WithOfflineQueueLimit(options.Offline.MaxMessagesPerSession),
+			memorystore.WithOfflineOverflowPolicy(options.Offline.Overflow),
+			memorystore.WithIdempotencyWindow(options.Message.IdempotencyWindow),
+		), nil, nil
+	case BackendDynamoDB:
+		cfg, err := f.loadAWSConfig(options)
+		if err != nil {
+			return nil, nil, err
+		}
+		client := awsdynamodb.NewFromConfig(cfg)
+		return dynamodbstore.New(
+			client,
+			options.State.TableName,
+			dynamodbstore.WithClock(options.Clock.Now),
+			dynamodbstore.WithOfflineQueueLimit(options.Offline.MaxMessagesPerSession),
+			dynamodbstore.WithOfflineOverflowPolicy(options.Offline.Overflow),
+			dynamodbstore.WithIdempotencyWindow(options.Message.IdempotencyWindow),
+		), nil, nil
+	case BackendRedis:
+		redisOptions, err := parseRedisOptions(options.State.RedisAddress)
+		if err != nil {
+			return nil, nil, err
+		}
+		client := goredis.NewClient(redisOptions)
+		storeOptions := []redisstore.Option{
+			redisstore.WithClock(options.Clock.Now),
+			redisstore.WithOfflineQueueLimit(options.Offline.MaxMessagesPerSession),
+			redisstore.WithOfflineOverflowPolicy(options.Offline.Overflow),
+			redisstore.WithIdempotencyWindow(options.Message.IdempotencyWindow),
+		}
+		if options.State.RedisKeyPrefix != &quot;&quot; {
+			storeOptions = append(storeOptions, redisstore.WithKeyPrefix(options.State.RedisKeyPrefix))
+		}
+		return redisstore.New(client, storeOptions...), client, nil
+	default:
+		return nil, nil, invalidConfig(&quot;state.backend&quot;, &quot;must be one of memory, dynamodb, or redis&quot;)
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 接入 server 选项</h3>
+<p>把 ws.Option 追加到 server.Options，与 event/http/reqresp/sqs 保持同样组合方式。</p>
+<p>在 <code>server/config.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func WithWsOptions(opts ...ws.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Ws = append(o.Ws, opts...)
+	})
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter19ServerOptionsFactoryAndObservability(t *testing.T) {
+	options := &amp;server.Options{}
+	server.WithLambdaType(&quot;ws&quot;).Apply(options)
+	server.WithWsOptions(ws.WithDevelopment(true)).Apply(options)
+	if options.Lambda != &quot;ws&quot; || len(options.Ws) != 1 {
+		t.Fatalf(&quot;server options=%#v&quot;, options)
+	}
+	engine, _, _ := newChapter09Engine(t, nil)
+	events := []ws.LogEvent{}
+	engine.SetLogger(ws.LoggerFunc(func(_ context.Context, event ws.LogEvent) { events = append(events, event) }))
+	if engine.StateStore() == nil {
+		t.Fatal(&quot;factory engine has no state store&quot;)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>server 能接收 lambda: ws 选项，Factory/Engine 依赖完整，日志字段保持安全。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>关闭调用方注入的 Redis client。</li>
+<li>连接用 DynamoDB、Session 却隐式使用 Redis。</li>
+<li>日志记录 payload、恢复凭据或原始 AWS 错误。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“server、Factory 与可观测性”。server 能接收 lambda: ws 选项，Factory/Engine 依赖完整，日志字段保持安全。</p>
+<p>下一节：第 20 节“跨后端集成与故障注入”。</p>
+</body></html>

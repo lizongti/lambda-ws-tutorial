@@ -1,0 +1,38 @@
+{
+  "number": 17,
+  "slug": "redis-connections",
+  "title": "Redis 连接与会话",
+  "pdf": "chapters/17-redis-connections/17-redis-connections.pdf",
+  "zip": "chapters/17-redis-connections/17-redis-connections.zip",
+  "snapshot": "work/snapshots/17-redis-connections",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 61,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/17-redis-connections",
+      "startedAt": "2026-11-24T06:53:04.216Z",
+      "exitCode": 0,
+      "log": "verification/chapters/17-redis-connections/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/17-redis-connections/17-redis-connections",
+      "startedAt": "2026-11-24T06:53:12.340Z",
+      "exitCode": 0,
+      "log": "verification/chapters/17-redis-connections/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/17-redis-connections/17-redis-connections",
+      "startedAt": "2026-11-24T06:53:15.909Z",
+      "exitCode": 0,
+      "log": "verification/chapters/17-redis-connections/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "7048cccc3e544086b24718dfcc6d702eb9264166d7bf487f4e002ae97ce8bff0",
+  "zipSha256": "c3f175f59502e70efe43df77227c4d08eb42fac3c7064d87747117f27c34a83e",
+  "verifiedAt": "2026-11-24T06:53:23.935Z"
+}

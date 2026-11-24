@@ -1,0 +1,38 @@
+{
+  "number": 18,
+  "slug": "redis-features",
+  "title": "Redis 房间、离线与幂等",
+  "pdf": "chapters/18-redis-features/18-redis-features.pdf",
+  "zip": "chapters/18-redis-features/18-redis-features.zip",
+  "snapshot": "work/snapshots/18-redis-features",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 65,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/18-redis-features",
+      "startedAt": "2026-11-24T06:53:23.953Z",
+      "exitCode": 0,
+      "log": "verification/chapters/18-redis-features/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/18-redis-features/18-redis-features",
+      "startedAt": "2026-11-24T06:53:32.058Z",
+      "exitCode": 0,
+      "log": "verification/chapters/18-redis-features/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/18-redis-features/18-redis-features",
+      "startedAt": "2026-11-24T06:53:35.573Z",
+      "exitCode": 0,
+      "log": "verification/chapters/18-redis-features/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "4d7296a8f3b9c8fd70d17c06fccfd1f8a1f14d1726d8bc10c081d424b20893f8",
+  "zipSha256": "66ad98222c151019cb0d04933b2fd824abf9d9c591d43308ecaa9b981bf4532b",
+  "verifiedAt": "2026-11-24T06:53:43.739Z"
+}

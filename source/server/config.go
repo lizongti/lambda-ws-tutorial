@@ -1,0 +1,258 @@
+package server
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/aura-studio/lambda/dynamic"
+	"github.com/aura-studio/lambda/event"
+	"github.com/aura-studio/lambda/http"
+	"github.com/aura-studio/lambda/reqresp"
+	"github.com/aura-studio/lambda/sqs"
+	"github.com/aura-studio/lambda/ws"
+	yaml "gopkg.in/yaml.v2"
+)
+
+type yamlServerConfig struct {
+	Lambda  string `yaml:"lambda"`
+	HTTP    any    `yaml:"http"`
+	SQS     any    `yaml:"sqs"`
+	ReqResp any    `yaml:"reqresp"`
+	Event   any    `yaml:"event"`
+	WS      any    `yaml:"ws"`
+	Dynamic any    `yaml:"dynamic"`
+}
+
+type Option interface {
+	Apply(*Options)
+}
+
+type Options struct {
+	Lambda  string
+	Http    []http.Option
+	Sqs     []sqs.Option
+	ReqResp []reqresp.Option
+	Event   []event.Option
+	Ws      []ws.Option
+	Dynamic []dynamic.Option
+}
+
+type serveOptionFunc func(*Options)
+
+func (f serveOptionFunc) Apply(o *Options) { f(o) }
+
+type serveConfigOption struct {
+	lambda     string
+	httpOpt    http.Option
+	sqsOpt     sqs.Option
+	reqRespOpt reqresp.Option
+	eventOpt   event.Option
+	wsOpt      ws.Option
+	dynOpt     dynamic.Option
+}
+
+func (o serveConfigOption) Apply(opts *Options) {
+	if o.lambda != "" {
+		opts.Lambda = o.lambda
+	}
+	if o.httpOpt != nil {
+		opts.Http = append(opts.Http, o.httpOpt)
+	}
+	if o.sqsOpt != nil {
+		opts.Sqs = append(opts.Sqs, o.sqsOpt)
+	}
+	if o.reqRespOpt != nil {
+		opts.ReqResp = append(opts.ReqResp, o.reqRespOpt)
+	}
+	if o.eventOpt != nil {
+		opts.Event = append(opts.Event, o.eventOpt)
+	}
+	if o.wsOpt != nil {
+		opts.Ws = append(opts.Ws, o.wsOpt)
+	}
+	if o.dynOpt != nil {
+		opts.Dynamic = append(opts.Dynamic, o.dynOpt)
+	}
+}
+
+// WithLambdaType sets the Lambda type (e.g., "http", "sqs").
+func WithLambdaType(lambdaType string) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Lambda = lambdaType
+	})
+}
+
+// WithHttpOptions adds HTTP options.
+func WithHttpOptions(opts ...http.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Http = append(o.Http, opts...)
+	})
+}
+
+// WithSqsOptions adds SQS options.
+func WithSqsOptions(opts ...sqs.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Sqs = append(o.Sqs, opts...)
+	})
+}
+
+// WithReqRespOptions adds ReqResp options.
+func WithReqRespOptions(opts ...reqresp.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.ReqResp = append(o.ReqResp, opts...)
+	})
+}
+
+// WithEventOptions adds Event options.
+func WithEventOptions(opts ...event.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Event = append(o.Event, opts...)
+	})
+}
+
+// WithWsOptions adds WebSocket options.
+func WithWsOptions(opts ...ws.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Ws = append(o.Ws, opts...)
+	})
+}
+
+// WithDynamicOptions adds Dynamic options.
+func WithDynamicOptions(opts ...dynamic.Option) Option {
+	return serveOptionFunc(func(o *Options) {
+		o.Dynamic = append(o.Dynamic, opts...)
+	})
+}
+
+// WithServeConfig parses YAML bytes following server.yml structure.
+func WithServeConfig(yamlBytes []byte) Option {
+	var cfg yamlServerConfig
+	if err := yaml.Unmarshal(yamlBytes, &cfg); err != nil {
+		panic(fmt.Errorf("server.WithServeConfig: %w", err))
+	}
+
+	var httpOpt http.Option
+	if cfg.HTTP != nil {
+		b, err := yaml.Marshal(cfg.HTTP)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		httpOpt = http.WithConfig(b)
+	}
+
+	var sqsOpt sqs.Option
+	if cfg.SQS != nil {
+		b, err := yaml.Marshal(cfg.SQS)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		sqsOpt = sqs.WithConfig(b)
+	}
+
+	var reqRespOpt reqresp.Option
+	if cfg.ReqResp != nil {
+		b, err := yaml.Marshal(cfg.ReqResp)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		reqRespOpt = reqresp.WithConfig(b)
+	}
+
+	var eventOpt event.Option
+	if cfg.Event != nil {
+		b, err := yaml.Marshal(cfg.Event)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		eventOpt = event.WithConfig(b)
+	}
+
+	var wsOpt ws.Option
+	if cfg.WS != nil {
+		b, err := yaml.Marshal(cfg.WS)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		wsOpt = ws.WithConfig(b)
+	}
+
+	var dynOpt dynamic.Option
+	if cfg.Dynamic != nil {
+		b, err := yaml.Marshal(cfg.Dynamic)
+		if err != nil {
+			panic(fmt.Errorf("server.WithServeConfig: %w", err))
+		}
+		dynOpt = dynamic.WithConfig(b)
+	}
+
+	return serveConfigOption{
+		lambda:     cfg.Lambda,
+		httpOpt:    httpOpt,
+		sqsOpt:     sqsOpt,
+		reqRespOpt: reqRespOpt,
+		eventOpt:   eventOpt,
+		wsOpt:      wsOpt,
+		dynOpt:     dynOpt,
+	}
+}
+
+// WithServeConfigFile loads a YAML file and applies it as ServeOption.
+func WithServeConfigFile(path string) Option {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Errorf("server.WithServeConfigFile(%s): %w", path, err))
+	}
+	return WithServeConfig(b)
+}
+
+// DefaultServeConfigCandidates returns relative paths that will be checked (in order)
+// when searching for a default server config.
+func DefaultServeConfigCandidates() []string {
+	return []string{
+		"lambda.yaml",
+		"lambda.yml",
+		"server.yaml",
+		"server.yml",
+		"bootstrap.yaml",
+		"bootstrap.yml",
+		"app.yaml",
+		"app.yml",
+		"config.yaml",
+		"config.yml",
+	}
+}
+
+// FindDefaultServeConfigFile searches for a server config file in a small set of
+// well-known locations (CWD then executable directory).
+func FindDefaultServeConfigFile() (string, error) {
+	candidates := DefaultServeConfigCandidates()
+
+	dirs := []string{"."}
+	if exe, err := os.Executable(); err == nil {
+		dirs = append(dirs, filepath.Dir(exe))
+	}
+
+	for _, dir := range dirs {
+		for _, rel := range candidates {
+			p := rel
+			if dir != "." {
+				p = filepath.Join(dir, rel)
+			}
+			if st, err := os.Stat(p); err == nil && !st.IsDir() {
+				return p, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("server config not found (expected %v)", candidates)
+}
+
+// WithDefaultServeConfigFile finds and loads the default server config file as a ServeOption.
+func WithDefaultServeConfigFile() Option {
+	p, err := FindDefaultServeConfigFile()
+	if err != nil {
+		panic(fmt.Errorf("server.WithDefaultServeConfigFile: %w", err))
+	}
+	return WithServeConfigFile(p)
+}

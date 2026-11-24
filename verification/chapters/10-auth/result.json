@@ -1,0 +1,38 @@
+{
+  "number": 10,
+  "slug": "auth",
+  "title": "认证、授权与 Principal",
+  "pdf": "chapters/10-auth/10-auth.pdf",
+  "zip": "chapters/10-auth/10-auth.zip",
+  "snapshot": "work/snapshots/10-auth",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 42,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/10-auth",
+      "startedAt": "2026-11-24T06:51:01.245Z",
+      "exitCode": 0,
+      "log": "verification/chapters/10-auth/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/10-auth/10-auth",
+      "startedAt": "2026-11-24T06:51:08.641Z",
+      "exitCode": 0,
+      "log": "verification/chapters/10-auth/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/10-auth/10-auth",
+      "startedAt": "2026-11-24T06:51:11.424Z",
+      "exitCode": 0,
+      "log": "verification/chapters/10-auth/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "c6bc79b3917b9be9d864401c0ebe69ddb6d9cf3f0d086610d0f847899dbd1b6d",
+  "zipSha256": "34e943f4b83a49f720ebafc2a31b07bf6e44222c0439024f5df11e91f058dbec",
+  "verifiedAt": "2026-11-24T06:51:18.065Z"
+}

@@ -1,0 +1,38 @@
+{
+  "number": 13,
+  "slug": "offline",
+  "title": "离线队列、确认与补发",
+  "pdf": "chapters/13-offline/13-offline.pdf",
+  "zip": "chapters/13-offline/13-offline.zip",
+  "snapshot": "work/snapshots/13-offline",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 47,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/13-offline",
+      "startedAt": "2026-11-24T06:51:52.224Z",
+      "exitCode": 0,
+      "log": "verification/chapters/13-offline/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/13-offline/13-offline",
+      "startedAt": "2026-11-24T06:51:59.584Z",
+      "exitCode": 0,
+      "log": "verification/chapters/13-offline/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/13-offline/13-offline",
+      "startedAt": "2026-11-24T06:52:02.954Z",
+      "exitCode": 0,
+      "log": "verification/chapters/13-offline/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "afd52fa79e9eddb0236415741641ab66881869754ccfb65c61eebcbc7517f5bb",
+  "zipSha256": "11bb3cec843681806c203b9c3faa4c8854c270ef8dd0483217e0e896fbd78794",
+  "verifiedAt": "2026-11-24T06:52:10.707Z"
+}

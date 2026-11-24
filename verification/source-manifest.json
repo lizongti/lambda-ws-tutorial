@@ -1,0 +1,602 @@
+{
+  "module": "github.com/aura-studio/lambda",
+  "goVersion": "go version go1.24.1 windows/amd64",
+  "capturedAt": "2026-11-24T06:08:36.585Z",
+  "files": [
+    {
+      "path": "dynamic/config.go",
+      "size": 2147,
+      "sha256": "cb8c65bf7e247467c0c68056b35c2f0ec555167c2df733f2c2109e32e6d38b5b"
+    },
+    {
+      "path": "dynamic/default_config.go",
+      "size": 1370,
+      "sha256": "e3b9eacf3130241b8245ccace0fdf4126203562b3259d8fbe047ef52085a7348"
+    },
+    {
+      "path": "dynamic/dynamic.go",
+      "size": 1336,
+      "sha256": "9448aa6e00e07c1e8cf47524ff68899f97e1c3e3cc26f9205229900c3f21494a"
+    },
+    {
+      "path": "dynamic/dynamic.yml",
+      "size": 226,
+      "sha256": "aa478c0c1aaa393d0bb296021199f1db58c4ee9ceaa7db78923ff3105ff7a2f3"
+    },
+    {
+      "path": "dynamic/meta.go",
+      "size": 3182,
+      "sha256": "a0d589a8b683abc21c5737abc44aa54e3ca35ec0a804279ffb403dc2e976b3ee"
+    },
+    {
+      "path": "dynamic/options.go",
+      "size": 2447,
+      "sha256": "8340357dfd98fb6fe349f53839d4a8ccd1756eb9cefd45ee5f9ba36f0f2a7ee8"
+    },
+    {
+      "path": "event/client/client.go",
+      "size": 1683,
+      "sha256": "3c67645422bdf3e59c9f889d1654d9c418c9f6751f134477c104823646913d67"
+    },
+    {
+      "path": "event/client/options.go",
+      "size": 1477,
+      "sha256": "2a570fc03eadffd96d06bf740e73767d6286e85b698c185ed35490a177027e51"
+    },
+    {
+      "path": "event/config.go",
+      "size": 918,
+      "sha256": "c02beb07d0f523d7a5744b2761652957785fb8862afe76d348450d7b70ba37b3"
+    },
+    {
+      "path": "event/default_config.go",
+      "size": 1345,
+      "sha256": "52d8fd922d9fc09b1dbeeee9f72b586708cf3785ab8b0b956c835edfc36f8709"
+    },
+    {
+      "path": "event/engine.go",
+      "size": 1337,
+      "sha256": "37f1a3e4553133c7976cc02df7598e7ba34d6bf821e3b84ff12c0a8ec7db414c"
+    },
+    {
+      "path": "event/event.pb.go",
+      "size": 4638,
+      "sha256": "97bd2d20cea6c1f032116a9ecb01cd998d730d899492060b6cd1f70d9f1082d0"
+    },
+    {
+      "path": "event/event.proto",
+      "size": 206,
+      "sha256": "260ad26c27b6c307e61e410293536ae74803eb5d90c5b07f27090381939aaa02"
+    },
+    {
+      "path": "event/event.yml",
+      "size": 21,
+      "sha256": "7d09f7a53582d418bc1e3de3f889c353842a8efb1b003addaa3e1720ccdef250"
+    },
+    {
+      "path": "event/handlers.go",
+      "size": 7152,
+      "sha256": "b313e56e441d79ea0415d72dea62920500107e33625acf50a8ce840b1e86daf7"
+    },
+    {
+      "path": "event/handlers_test.go",
+      "size": 1738,
+      "sha256": "5eb4923daebfbff01e0d30faf734a57320cb2bbd98ca2f7223dd32cdb572ccd8"
+    },
+    {
+      "path": "event/options.go",
+      "size": 628,
+      "sha256": "0c02e5322e83013ff0ca629cfac791ef9d499238b1a4e8edcb3c5b72a6f64255"
+    },
+    {
+      "path": "event/router.go",
+      "size": 2987,
+      "sha256": "bcb65cf4102aa561becf9c24b241cd1d6e4b91e1422a58965e4ca56a8acc11bb"
+    },
+    {
+      "path": "event/server.go",
+      "size": 376,
+      "sha256": "cd01de97dc0f246801501878d1f661508b448714d7578f61020f46de4cca17a3"
+    },
+    {
+      "path": "go.mod",
+      "size": 3037,
+      "sha256": "f28ef68b70a40f682a0a5610b728d040ab772c3bd3ab17bcb4319ec1f3b7342d"
+    },
+    {
+      "path": "go.sum",
+      "size": 16332,
+      "sha256": "6b6ba31669560b8a864882790d6a7b51886e9ac20238bae1187d8f4b6d306898"
+    },
+    {
+      "path": "http/client/client.go",
+      "size": 3641,
+      "sha256": "6c72e1b24ea42e3709708f9d3c7f5b91d5b5ba85b85ec58fe96e6ed498ddefe0"
+    },
+    {
+      "path": "http/client/options.go",
+      "size": 1786,
+      "sha256": "da01d97e108e83af58e92045cf2f8294c8a56c810ae912589b5ec8f7140e9c64"
+    },
+    {
+      "path": "http/config.go",
+      "size": 2788,
+      "sha256": "0a047dbb228f5e384763745faf78f36c5fe759f1cb58aaba7b9e42051c72cf89"
+    },
+    {
+      "path": "http/cors.go",
+      "size": 743,
+      "sha256": "22af3d7169e344d41cfc0b493db9f54cf167bb699c5017330cdbf23556e7316b"
+    },
+    {
+      "path": "http/default_config.go",
+      "size": 1333,
+      "sha256": "3429365ef34f2e53f03b94491e15c13dedab5e1ef14fb58729fc6aaa0e8c134e"
+    },
+    {
+      "path": "http/engine.go",
+      "size": 487,
+      "sha256": "1df4d308204ef30f66bfb32f3eb739cd948ccb16fc300a784471c1d132b0b739"
+    },
+    {
+      "path": "http/handlers.go",
+      "size": 18751,
+      "sha256": "53df78d9af5004bf1acec3991798d9680adfea39bd720788396d816a9f1c0b1a"
+    },
+    {
+      "path": "http/http.yml",
+      "size": 389,
+      "sha256": "56833faf76f3aa3e7eff2a9176ab1b8fc0d065fb5d9fc07cc422255b02d12b2d"
+    },
+    {
+      "path": "http/options.go",
+      "size": 3025,
+      "sha256": "c66fff3f20544d525c23dcfcb34de278661344e1da83a8003a6450c43a24ae44"
+    },
+    {
+      "path": "http/server.go",
+      "size": 641,
+      "sha256": "c65b364ac82bb739ebcb72c63dd879f1718505792108e02fe43a41b00e770e9e"
+    },
+    {
+      "path": "reqresp/client/client.go",
+      "size": 1950,
+      "sha256": "7d28b88ef22a23ab9e849ab57d894f344476315b17907a6390cb333c67d896a8"
+    },
+    {
+      "path": "reqresp/client/options.go",
+      "size": 1477,
+      "sha256": "2a570fc03eadffd96d06bf740e73767d6286e85b698c185ed35490a177027e51"
+    },
+    {
+      "path": "reqresp/config.go",
+      "size": 934,
+      "sha256": "68336990b57a1176727dab4a5f07e575f8a74ecd4c90abcd0b6facf19236d9f7"
+    },
+    {
+      "path": "reqresp/default_config.go",
+      "size": 1368,
+      "sha256": "ca510b03e44e497ce0a3cd3f8f63ca66f58f5f4120b9c8163be9cdcb82915fc2"
+    },
+    {
+      "path": "reqresp/engine.go",
+      "size": 1173,
+      "sha256": "4a60f6254283bc31ca857cb84f97b80e933e2cf1a25955094e941a484ea68b7a"
+    },
+    {
+      "path": "reqresp/handlers.go",
+      "size": 7154,
+      "sha256": "b7cd790a460612b072e7b63aa07b0aa8438718f146c9745346ce4afead0e3993"
+    },
+    {
+      "path": "reqresp/options.go",
+      "size": 630,
+      "sha256": "8442f530709a64b2221971ebe7c2c8874eceeb36450dbf350d280105a793ccb2"
+    },
+    {
+      "path": "reqresp/reqresp.pb.go",
+      "size": 6742,
+      "sha256": "d02736d140180166c245a75452125a6b29956b73865bce7256567c4ac8d4ec98"
+    },
+    {
+      "path": "reqresp/reqresp.proto",
+      "size": 324,
+      "sha256": "735b3d9f1ce228aad3c8c16a0c4ec6aa0948ebf19bdfac5b28a47c9048ba4fe1"
+    },
+    {
+      "path": "reqresp/reqresp.yml",
+      "size": 21,
+      "sha256": "7d09f7a53582d418bc1e3de3f889c353842a8efb1b003addaa3e1720ccdef250"
+    },
+    {
+      "path": "reqresp/router.go",
+      "size": 2989,
+      "sha256": "2c85b732b4be1d7914dde389af6e0c4bd48dee8f07d2ed134aa0551701e5a84f"
+    },
+    {
+      "path": "reqresp/server.go",
+      "size": 382,
+      "sha256": "4edd28d2d62d4ead094321c027f55d6024069c9a54434f495d2a897ff6a13d8e"
+    },
+    {
+      "path": "server/config.go",
+      "size": 6094,
+      "sha256": "19692257d2259658c0ca7c41ea612e4d70d3d1eae16f6cec624eff1ec06ad155"
+    },
+    {
+      "path": "server/server.go",
+      "size": 759,
+      "sha256": "f5a95fdff581268bf455917af81a15bc28a4593e853a0ad8ed4f999166f04c0b"
+    },
+    {
+      "path": "server/server.yml",
+      "size": 543,
+      "sha256": "12fbab85241667a49e5f5073a6d2099c68f98bb010ece596f06c5199f8fd170b"
+    },
+    {
+      "path": "sqs/client/client.go",
+      "size": 3315,
+      "sha256": "b735010e153b392cf6528f999516865c405b53570595cea54c1fec1d8cb4f189"
+    },
+    {
+      "path": "sqs/client/options.go",
+      "size": 1068,
+      "sha256": "af4443bede19849b0da2d7aef345d5f7a1ecb09958cd45085195833c811ae68a"
+    },
+    {
+      "path": "sqs/config.go",
+      "size": 1490,
+      "sha256": "ec01e85176a827bd809c64919ee1ae3ac541cd2b2e5a07dfa6cbfd5dbd66632e"
+    },
+    {
+      "path": "sqs/context.go",
+      "size": 48,
+      "sha256": "47f4a708c2b22828f9459954a73966c6e036fda1c8d243343929d58bfd711881"
+    },
+    {
+      "path": "sqs/default_config.go",
+      "size": 1321,
+      "sha256": "6175551456c712aa1bc122c6923c13bd37bc5282de8d64e6f2e1884c9cca0dda"
+    },
+    {
+      "path": "sqs/engine.go",
+      "size": 5883,
+      "sha256": "380d34f2a282cdf97597397464473c76227e60341a80a5eedc99ff60aa6eed99"
+    },
+    {
+      "path": "sqs/handlers.go",
+      "size": 7150,
+      "sha256": "0baca5ac572ee1deb3657ceb3f54d6a85c778677551de2dd3a7ae7e1ee2d64aa"
+    },
+    {
+      "path": "sqs/options.go",
+      "size": 1812,
+      "sha256": "d71facef92189882a812f3d7f1acd2bb99a88ebe1b308a7351a5f41dce7bc1b6"
+    },
+    {
+      "path": "sqs/router.go",
+      "size": 3153,
+      "sha256": "bce604f522b6cc3346a6eea1f3e0611b289531af1ab12e100aeb97290c31d519"
+    },
+    {
+      "path": "sqs/server.go",
+      "size": 341,
+      "sha256": "8a5766031e6e831adf2500a384cb6ffe6666c2c1526dd14d9fa7a75163f50bd9"
+    },
+    {
+      "path": "sqs/sqs.pb.go",
+      "size": 9192,
+      "sha256": "7fb70060c8e79c3d9d911e214de4c4f9057e0a6795a4ded1c65875ed81d4e3c7"
+    },
+    {
+      "path": "sqs/sqs.proto",
+      "size": 389,
+      "sha256": "7159ea16b1f2b7e6a5f4ac842c2f268c74d01a047cf1ff50ab32193f284f62c4"
+    },
+    {
+      "path": "sqs/sqs.yml",
+      "size": 84,
+      "sha256": "90a0b2558c71e0f91fc374a3a10e61b873e69a0a0551cbf73d9e2491d6dfbda6"
+    },
+    {
+      "path": "tests/ws_auth_test.go",
+      "size": 11418,
+      "sha256": "607bb25dae354dedb39f25c3c29309ddfa51587a6c9ac270320ea31e2454d166"
+    },
+    {
+      "path": "tests/ws_config_test.go",
+      "size": 14867,
+      "sha256": "86bb78d2d5f97580f94b3afe08a20bbed543d134ab6f62e3a48a5f815b54b285"
+    },
+    {
+      "path": "tests/ws_engine_test.go",
+      "size": 17209,
+      "sha256": "79aff7d68ac7dfa1221918f87b7fceb69248ee70e27fe0c5844619e9fddfc5d1"
+    },
+    {
+      "path": "tests/ws_integration_test.go",
+      "size": 50673,
+      "sha256": "07c14ae28734bb8cbc04bfd5cd81d96ef45887ff2dcbc4c61d059cb4515645ff"
+    },
+    {
+      "path": "tests/ws_lifecycle_test.go",
+      "size": 27320,
+      "sha256": "1f5aeed9ff37089589044bdfd45e8d2cf4cb66b3778670c4e89ad32bc137881c"
+    },
+    {
+      "path": "tests/ws_maintenance_observability_test.go",
+      "size": 7201,
+      "sha256": "c6d83782b90d71557bee88d57d64bd3aa48d015e00de2da3ffd6bd4114fa3cb3"
+    },
+    {
+      "path": "tests/ws_maintenance_test.go",
+      "size": 23155,
+      "sha256": "af3b747c57bc4096a18351753b5bc0504e3c31e12947a724a1471e17ec1006e3"
+    },
+    {
+      "path": "tests/ws_offline_test.go",
+      "size": 24661,
+      "sha256": "034934531fe94856ac6316edbc62bbfad3d8f700f6e086935e6b5b00e6795fd4"
+    },
+    {
+      "path": "tests/ws_protocol_test.go",
+      "size": 14383,
+      "sha256": "0c302e323f3bab0d0b912e312ca4ab633e1b12185d2ffdbcbb776e03619a03be"
+    },
+    {
+      "path": "tests/ws_pusher_test.go",
+      "size": 16276,
+      "sha256": "908bbf79d921b8ee6e6cae6ac23b61947a7b78706dc227bd816b8444900dd9c5"
+    },
+    {
+      "path": "tests/ws_reconnect_test.go",
+      "size": 21342,
+      "sha256": "7f849f1d2c05acfe14060fe28fa85f49ed70875c19982f58ab90ab032c85a69c"
+    },
+    {
+      "path": "tests/ws_room_test.go",
+      "size": 23539,
+      "sha256": "e94e221849116509c23829108b7ed1e8dffe121290ece5fd395001a716d25641"
+    },
+    {
+      "path": "tests/ws_router_test.go",
+      "size": 6751,
+      "sha256": "d284f327acb0054838574f21bfce439022430397de61584802681d1be9f2e3a1"
+    },
+    {
+      "path": "tests/ws_server_test.go",
+      "size": 16927,
+      "sha256": "a2fc24f6bc58d1751e42ae9f3e9706cc4d154e564fd930e1c635ded5e904d4b3"
+    },
+    {
+      "path": "tests/ws_store_contract_test.go",
+      "size": 21526,
+      "sha256": "a20d8fcd5ea088b48917c9772408a558e44cd9c235ccc70dd3ba4814b87b3f80"
+    },
+    {
+      "path": "ws/apigateway_pusher.go",
+      "size": 11900,
+      "sha256": "7ee4d39ca64910990c819a4ff0bff9c1da3b1cfafa31715862e8b2a632dc8cca"
+    },
+    {
+      "path": "ws/auth.go",
+      "size": 5922,
+      "sha256": "c4117ff9ff55a07d5052b1d3b911ad2ff47dc4665f05119b16b9f6022e439c95"
+    },
+    {
+      "path": "ws/auth_test.go",
+      "size": 7890,
+      "sha256": "123fdf65cb414d5e65c780e15c59931a57b05ccfcc226f5df52d891e397e15cd"
+    },
+    {
+      "path": "ws/config.go",
+      "size": 10346,
+      "sha256": "251fc4d96a9e07df60de724b912b00869a353ae947a331adc9b8b21c6cfbf699"
+    },
+    {
+      "path": "ws/context.go",
+      "size": 4371,
+      "sha256": "d39382e016bcb59f1a8a95ad48f634b3803fd61fd6202e58e1ad4a9b18a3af71"
+    },
+    {
+      "path": "ws/default_config.go",
+      "size": 3689,
+      "sha256": "98c8465a9c61cc304e7c35e5735611a905da8d257285e0c2e7ca0e130fac3f8d"
+    },
+    {
+      "path": "ws/engine.go",
+      "size": 17147,
+      "sha256": "f865424ad8091b5d7333051f7130d07776666f15a38957db62b82c55f4e0fa10"
+    },
+    {
+      "path": "ws/events.go",
+      "size": 2864,
+      "sha256": "0a738e85b38ca70fc47dd95f7a670a3fb77a45dcaed95d08154a1728af40ab04"
+    },
+    {
+      "path": "ws/factory.go",
+      "size": 6980,
+      "sha256": "b18a4c9554ed810785f29ae5719d0694c0dc2a768b8e029e9eded92f9bc87b55"
+    },
+    {
+      "path": "ws/heartbeat.go",
+      "size": 803,
+      "sha256": "a80f2134ed382360b206e8de69621d932b43ea683048719e0064da317683056f"
+    },
+    {
+      "path": "ws/maintenance.go",
+      "size": 10301,
+      "sha256": "7ad0b99de7ba6727dd9a019c17f102eb8307329635190161bf091b4b4b1b4602"
+    },
+    {
+      "path": "ws/observability.go",
+      "size": 6240,
+      "sha256": "f98f8adf3742bd5ea458946eb0fc069c5016bb2705a6d912d57188c82ae08a92"
+    },
+    {
+      "path": "ws/offline.go",
+      "size": 10333,
+      "sha256": "ab5d7fd3954901f93279283cfa3cb0336f99368c3b2e1c30c72c2f2b4fb03f5c"
+    },
+    {
+      "path": "ws/options.go",
+      "size": 13845,
+      "sha256": "f3984090e386840e6c1ce2e067304c01095daf708c8e7d09996bff7a6c7c9b53"
+    },
+    {
+      "path": "ws/protocol.go",
+      "size": 15989,
+      "sha256": "4c36b7f265d92167cb2b991c106f274d79325c44e3dfdfe80efcf1089fa5e1a5"
+    },
+    {
+      "path": "ws/pusher.go",
+      "size": 6972,
+      "sha256": "4df204d33c0ae351abfadb3f1e661d69090d7046cb71208f97af1481f17ea5da"
+    },
+    {
+      "path": "ws/retry_store.go",
+      "size": 8386,
+      "sha256": "4d52a59b01dcdb52234e2130ea90836681d09d74a0fbfa8637591e299e026afc"
+    },
+    {
+      "path": "ws/retry_store_test.go",
+      "size": 2674,
+      "sha256": "b7f0e3a78e51ba42255e68df1cff8aae5f99a73fbd82ca52e2bf276531621228"
+    },
+    {
+      "path": "ws/room.go",
+      "size": 10089,
+      "sha256": "5c3ad7d12aec537d1ffd174366e3b2edae715ec9074d2adf22ed526201f270a5"
+    },
+    {
+      "path": "ws/router.go",
+      "size": 7000,
+      "sha256": "920132aae4de07ae8ccd1d14be333798cb756c39c72af2b83ee531921642d9c2"
+    },
+    {
+      "path": "ws/server.go",
+      "size": 8332,
+      "sha256": "486a32d42a4ee04fab8e65a1012af4767f25c4d2efb8ff500d357972c7715e70"
+    },
+    {
+      "path": "ws/session.go",
+      "size": 11750,
+      "sha256": "41a4eb8911ee71b608da584af0fdc0ec0711ffec95a62b1c56ff5b22ecb7d365"
+    },
+    {
+      "path": "ws/store/dynamodb/codec.go",
+      "size": 15065,
+      "sha256": "d9dbc109559240447dce320c098e5e84ac045286cfafb2154fb04f8393619635"
+    },
+    {
+      "path": "ws/store/dynamodb/connection_session.go",
+      "size": 27653,
+      "sha256": "b7bb84b39a56c0119d4fd97eae09005aad82707c7fcb2f963d599b11fcad5e18"
+    },
+    {
+      "path": "ws/store/dynamodb/contract_test.go",
+      "size": 21447,
+      "sha256": "1241266018b09f40c06527119c37d12bd80741058fec690fcae40ea614bbada8"
+    },
+    {
+      "path": "ws/store/dynamodb/dynamodbtest/fake.go",
+      "size": 22319,
+      "sha256": "2be75b2b48a75535132ad3e8a7275b84caa47a63201c12e31672d85302a2da10"
+    },
+    {
+      "path": "ws/store/dynamodb/fault_test.go",
+      "size": 17444,
+      "sha256": "3b9fb6929c4e361506f15214e07e6960d88fdbb294ec2a8bcee07305ffc02319"
+    },
+    {
+      "path": "ws/store/dynamodb/idempotency.go",
+      "size": 6902,
+      "sha256": "c129a6cd6fed893c8aa29b695ad009c2e9e16fe114c25368125b0678080a8a7d"
+    },
+    {
+      "path": "ws/store/dynamodb/integration_test.go",
+      "size": 5176,
+      "sha256": "f80d77a30eabac6a330bb76a0b9b8b8b92f74971fdcc20c6d8ab3b2eddea75ca"
+    },
+    {
+      "path": "ws/store/dynamodb/offline.go",
+      "size": 19527,
+      "sha256": "fa33efdb67f369994b3f3a65325bc416ebf072dede4b858b0da0ccc6b7bab7c0"
+    },
+    {
+      "path": "ws/store/dynamodb/room.go",
+      "size": 8752,
+      "sha256": "c0c4245ec4fdcc97d45816928594868e410f8a1a9e3a98f94113d714cfc60cac"
+    },
+    {
+      "path": "ws/store/dynamodb/store.go",
+      "size": 8833,
+      "sha256": "949c8d23343b206f58d867d83b2c49f83b08a09ebe0a9689fea2a54d0a435928"
+    },
+    {
+      "path": "ws/store/memory/connection_session.go",
+      "size": 9458,
+      "sha256": "fb1dddd1c474a2e4d682ce3cbcdcdb090c0bde204d01878287da492d46b1b044"
+    },
+    {
+      "path": "ws/store/memory/idempotency.go",
+      "size": 4309,
+      "sha256": "a93468b4a5840249420ea6589ab0f59a04fa84b25f30097d41c521642a26a457"
+    },
+    {
+      "path": "ws/store/memory/offline.go",
+      "size": 7787,
+      "sha256": "584a008a84c7ccc7a987a8e64aaf0cc6897b6c71e7106d66805a8ab4977da8ff"
+    },
+    {
+      "path": "ws/store/memory/room.go",
+      "size": 4172,
+      "sha256": "968ec15b28590e49f7abbc0186180f8e05daa896d339860e06fda56b47796445"
+    },
+    {
+      "path": "ws/store/memory/store.go",
+      "size": 4500,
+      "sha256": "b51b30812d296603d1f718796b0cc64f75a8c3faa99628aa2a3788065f4603f5"
+    },
+    {
+      "path": "ws/store/memory/store_test.go",
+      "size": 9008,
+      "sha256": "4bccf875d0c25e998fe47f0590dbedccddfacdb459c9157943268e42cba67866"
+    },
+    {
+      "path": "ws/store/redis/connection_session.go",
+      "size": 21367,
+      "sha256": "f69a3be1265f50712b98eb7476e117f07ee83866dc60a12beb4d9206353ee10d"
+    },
+    {
+      "path": "ws/store/redis/idempotency.go",
+      "size": 6526,
+      "sha256": "e43d29dc4cc055b1a7dcb206ffbe8c5f6dcf554237091736b4ca4cda19a5dce1"
+    },
+    {
+      "path": "ws/store/redis/offline.go",
+      "size": 12297,
+      "sha256": "28d1e6fa2066c2150ac88686e4c28d9c0e881503a3b2b8e8c6e68bcb96564f97"
+    },
+    {
+      "path": "ws/store/redis/room.go",
+      "size": 12861,
+      "sha256": "3ba3eada539844622c739793c83d75fae763515603f676114c2db94f9889a2d6"
+    },
+    {
+      "path": "ws/store/redis/store.go",
+      "size": 9464,
+      "sha256": "235586ee21a932cc324462125fc62ee4304bb07b897696998992dc37a86550b5"
+    },
+    {
+      "path": "ws/store/redis/store_test.go",
+      "size": 36071,
+      "sha256": "93fd4a7f42f3c70ac58ef60ec3418a3c8dacd78e0cf601b70a310e23e78c3c64"
+    },
+    {
+      "path": "ws/store/store.go",
+      "size": 12247,
+      "sha256": "fd55f1ea0978ba69d5e2f9cc0a905997b0e633a491060954aa70b37fa03e9e3f"
+    }
+  ]
+}

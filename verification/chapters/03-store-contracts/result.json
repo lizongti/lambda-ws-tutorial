@@ -1,0 +1,31 @@
+{
+  "number": 3,
+  "slug": "store-contracts",
+  "title": "StateStore 契约与测试基座",
+  "pdf": "chapters/03-store-contracts/03-store-contracts.pdf",
+  "zip": "chapters/03-store-contracts/03-store-contracts.zip",
+  "snapshot": "work/snapshots/03-store-contracts",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": false,
+  "snippetCount": 4,
+  "zipEntryCount": 13,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/03-store-contracts",
+      "startedAt": "2026-11-24T06:49:27.634Z",
+      "exitCode": 0,
+      "log": "verification/chapters/03-store-contracts/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/03-store-contracts/03-store-contracts",
+      "startedAt": "2026-11-24T06:49:33.809Z",
+      "exitCode": 0,
+      "log": "verification/chapters/03-store-contracts/02-extracted-test.log"
+    }
+  ],
+  "pdfSha256": "7cb3df34456c58011731237b064e3752307c77124e2e9e785c332f15c0a876be",
+  "zipSha256": "7bf68834b6ba620fdbc3de13ccf7b1061e6dd829562d0d66f139d8ce06d6f0bc",
+  "verifiedAt": "2026-11-24T06:49:35.817Z"
+}

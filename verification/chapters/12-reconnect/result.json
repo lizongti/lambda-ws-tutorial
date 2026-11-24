@@ -1,0 +1,38 @@
+{
+  "number": 12,
+  "slug": "reconnect",
+  "title": "Session 与原子重连",
+  "pdf": "chapters/12-reconnect/12-reconnect.pdf",
+  "zip": "chapters/12-reconnect/12-reconnect.zip",
+  "snapshot": "work/snapshots/12-reconnect",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 46,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/12-reconnect",
+      "startedAt": "2026-11-24T06:51:34.833Z",
+      "exitCode": 0,
+      "log": "verification/chapters/12-reconnect/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/12-reconnect/12-reconnect",
+      "startedAt": "2026-11-24T06:51:42.119Z",
+      "exitCode": 0,
+      "log": "verification/chapters/12-reconnect/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/12-reconnect/12-reconnect",
+      "startedAt": "2026-11-24T06:51:45.678Z",
+      "exitCode": 0,
+      "log": "verification/chapters/12-reconnect/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "44f41952a93196c21adfa2552ee6bf7fe70e1d7f4ed0caa96b635c96ecc017ab",
+  "zipSha256": "c980883093d6c27f3c447cb819a0c9ffa25f3b975a04320676dcdfbb0c3133e1",
+  "verifiedAt": "2026-11-24T06:51:52.206Z"
+}

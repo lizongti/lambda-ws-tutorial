@@ -1,0 +1,231 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 12 节：Session 与原子重连</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 12 节：Session 与原子重连</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Session 与原子重连”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>网络中断后，客户端应凭恢复凭据把同一 Session 绑定到新 Connection_ID，同时旧连接的迟到事件不能破坏新绑定。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>恢复凭据</strong>：原始值只返回连接发起方，存储域分离 SHA-256 表示。</li>
+<li>解释并应用 <strong>原子重连</strong>：BindConnection 保留 Session_ID 并递增 generation。</li>
+<li>解释并应用 <strong>fencing</strong>：消息、心跳、disconnect 和 ack 都校验当前绑定。</li>
+</ul>
+<p>本章与前一节的关系：保留第 11 节“心跳与 Maintenance”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>用 session.go 的 HandleConnect 和 clone 辅助函数替换临时实现；恢复凭据、原子重连和离线补发入口现在由真实会话流程负责。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>恢复凭据</h3>
+<p>原始值只返回连接发起方，存储域分离 SHA-256 表示。</p>
+<h3>原子重连</h3>
+<p>BindConnection 保留 Session_ID 并递增 generation。</p>
+<h3>fencing</h3>
+<p>消息、心跳、disconnect 和 ack 都校验当前绑定。</p>
+<h3>实现约束</h3>
+<ol>
+<li>恢复时同时校验 Session、Principal、凭据和过期时间。</li>
+<li>replaceExisting 决定已有活动连接是拒绝还是替换。</li>
+<li>断连只条件解绑，Session 在重连窗口内继续保留。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 保护恢复凭据</h3>
+<p>哈希输入包含协议域与 Session_ID，避免凭据哈希被移植到其他会话。</p>
+<p>在 <code>ws/session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func HashResumeCredential(sessionID, credential string) string {
+	digest := sha256.Sum256([]byte(&quot;lambda/ws/resume-v1\x00&quot; + sessionID + &quot;\x00&quot; + credential))
+	return hex.EncodeToString(digest[:])
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 恢复已有会话</h3>
+<p>验证授权与凭据后执行存储原子绑定，并触发离线补发。</p>
+<p>在 <code>ws/session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (e *Engine) resumeSession(ctx context.Context, event ConnectEvent, principal Principal) (ConnectResult, error) {
+	session, err := e.Options.StateStore.GetSession(ctx, event.SessionID)
+	if err != nil {
+		if wsstore.IsNotFound(err) {
+			return ConnectResult{}, errors.Join(ErrInvalidResume, err)
+		}
+		return ConnectResult{}, err
+	}
+	now := e.Options.Clock.Now()
+	if session.PrincipalSubject != principal.Subject || !resumeCredentialMatches(session, event.ResumeCredential) ||
+		(!session.ExpiresAt.IsZero() &amp;&amp; !session.ExpiresAt.After(now)) {
+		return ConnectResult{}, ErrInvalidResume
+	}
+	if !nilDependency(e.Options.Authorizer) {
+		if err := e.Options.Authorizer.Authorize(ctx, principal.Clone(), Action{
+			Name: ActionSessionResume, SessionID: session.SessionID, Resource: session.SessionID,
+		}); err != nil {
+			return ConnectResult{}, ErrAuthorizationFailed
+		}
+	}
+
+	oldConnectionID := session.CurrentConnectionID
+	if oldConnectionID != &quot;&quot; &amp;&amp; !e.Options.Reconnect.ReplaceExisting {
+		if old, getErr := e.Options.StateStore.GetConnection(ctx, oldConnectionID); getErr == nil &amp;&amp; old.State == wsstore.ConnectionStateActive {
+			return ConnectResult{}, ErrConnectionConflict
+		} else if getErr != nil &amp;&amp; !wsstore.IsNotFound(getErr) {
+			return ConnectResult{}, getErr
+		}
+	}
+	bound, err := e.Options.StateStore.BindConnection(ctx, session.SessionID, event.ConnectionID, session.Generation)
+	if err != nil {
+		if wsstore.IsConditionConflict(err) {
+			return ConnectResult{}, errors.Join(ErrConnectionConflict, err)
+		}
+		return ConnectResult{}, err
+	}
+	connection := e.newConnection(event.ConnectionID, bound, now)
+	if err := e.Options.StateStore.PutConnection(ctx, connection); err != nil {
+		_ = e.Options.StateStore.UnbindConnectionIfMatch(ctx, session.SessionID, event.ConnectionID, bound.Generation)
+		return ConnectResult{}, err
+	}
+
+	if oldConnectionID != &quot;&quot; &amp;&amp; oldConnectionID != event.ConnectionID {
+		if old, getErr := e.Options.StateStore.GetConnection(ctx, oldConnectionID); getErr == nil {
+			// The session has already advanced. cleanupConnection&#39;s conditional
+			// unbind therefore cannot clear the replacement binding.
+			if cleanupErr := e.cleanupConnection(ctx, old, &quot;replaced&quot;); cleanupErr != nil &amp;&amp; !isFencingError(cleanupErr) {
+				e.observability.log(ctx, LogEvent{Name: LogEventReconnect, Outcome: &quot;cleanup_failed&quot;, RequestID: event.RequestID, ConnectionID: old.ConnectionID, SessionID: session.SessionID, ErrorCode: safeErrorCode(cleanupErr)})
+			}
+		}
+	}
+	return ConnectResult{
+		ConnectionID:     event.ConnectionID,
+		SessionID:        session.SessionID,
+		Generation:       bound.Generation,
+		ResumeCredential: event.ResumeCredential,
+		Reconnected:      true,
+	}, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 创建当前连接记录</h3>
+<p>物理连接继承当前 Session、Principal 与 generation，并初始化 last-seen。</p>
+<p>在 <code>ws/session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (e *Engine) newConnection(connectionID string, session wsstore.Session, nowTime time.Time) wsstore.Connection {
+	return wsstore.Connection{
+		ConnectionID:     connectionID,
+		SessionID:        session.SessionID,
+		PrincipalSubject: session.PrincipalSubject,
+		Generation:       session.Generation,
+		ConnectedAt:      nowTime,
+		LastSeenAt:       nowTime,
+		ExpiresAt:        nowTime.Add(e.Options.Reconnect.SessionRetention),
+		State:            wsstore.ConnectionStateActive,
+	}
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter12ReconnectAndStaleDisconnect(t *testing.T) {
+	engine, _, store := newChapter09Engine(t, nil)
+	first, err := engine.HandleConnect(context.Background(), ws.ConnectEvent{ConnectionID: &quot;c1&quot;})
+	if err != nil || first.ResumeCredential == &quot;&quot; {
+		t.Fatalf(&quot;first=%#v err=%v&quot;, first, err)
+	}
+	if err := engine.HandleDisconnect(context.Background(), ws.DisconnectEvent{ConnectionID: &quot;c1&quot;, SessionID: first.SessionID, Generation: first.Generation}); err != nil {
+		t.Fatal(err)
+	}
+	second, err := engine.HandleConnect(context.Background(), ws.ConnectEvent{ConnectionID: &quot;c2&quot;, SessionID: first.SessionID, ResumeCredential: first.ResumeCredential})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Reconnected || second.SessionID != first.SessionID || second.Generation &lt;= first.Generation {
+		t.Fatalf(&quot;second=%#v first=%#v&quot;, second, first)
+	}
+	if err := engine.HandleDisconnect(context.Background(), ws.DisconnectEvent{ConnectionID: &quot;c1&quot;, SessionID: first.SessionID, Generation: first.Generation}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.GetConnection(context.Background(), &quot;c2&quot;); err != nil {
+		t.Fatalf(&quot;stale disconnect removed c2: %v&quot;, err)
+	}
+	if _, err := engine.HandleConnect(context.Background(), ws.ConnectEvent{ConnectionID: &quot;c3&quot;, SessionID: first.SessionID, ResumeCredential: &quot;wrong&quot;}); err == nil {
+		t.Fatal(&quot;wrong credential accepted&quot;)
+	}
+	_ = wsstore.ConnectionStateActive
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>c1 断开后 c2 恢复同一 Session 且 generation 增加，旧 c1 disconnect 不影响 c2。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>在 Session 中保存明文恢复凭据。</li>
+<li>重连时生成新的 Session_ID。</li>
+<li>只校验 Connection_ID 而不校验 generation。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Session 与原子重连”。c1 断开后 c2 恢复同一 Session 且 generation 增加，旧 c1 disconnect 不影响 c2。</p>
+<p>下一节：第 13 节“离线队列、确认与补发”。</p>
+</body></html>

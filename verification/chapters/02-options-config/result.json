@@ -1,0 +1,31 @@
+{
+  "number": 2,
+  "slug": "options-config",
+  "title": "Options、默认配置与 YAML",
+  "pdf": "chapters/02-options-config/02-options-config.pdf",
+  "zip": "chapters/02-options-config/02-options-config.zip",
+  "snapshot": "work/snapshots/02-options-config",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": false,
+  "snippetCount": 4,
+  "zipEntryCount": 12,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/02-options-config",
+      "startedAt": "2026-11-24T06:49:19.121Z",
+      "exitCode": 0,
+      "log": "verification/chapters/02-options-config/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/02-options-config/02-options-config",
+      "startedAt": "2026-11-24T06:49:25.700Z",
+      "exitCode": 0,
+      "log": "verification/chapters/02-options-config/02-extracted-test.log"
+    }
+  ],
+  "pdfSha256": "13ec9b7d8272046f036c36b14a269ee05140b839bcb96d82e147481b15309d9a",
+  "zipSha256": "c8275e49683ce2cae69e8765c88b7cc9b8b2e945075ba14f2df39a86ab049ab6",
+  "verifiedAt": "2026-11-24T06:49:27.614Z"
+}

@@ -1,0 +1,7 @@
+tools/node_modules/
+tools/.venv/
+work/extract/
+work/expanded-delivery/
+work/rebuild-check/
+work/tmp/
+*.zip

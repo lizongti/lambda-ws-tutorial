@@ -1,0 +1,223 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 17 节：Redis 连接与会话</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 17 节：Redis 连接与会话</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Redis 连接与会话”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>Redis 共享实现使用 Lua 把条件检查和写入放在服务端一次原子执行，避免多实例读改写竞争。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>key prefix</strong>：所有连接、会话和索引共享可配置命名空间。</li>
+<li>解释并应用 <strong>Lua CAS</strong>：比较 JSON 中的 generation/绑定后原子更新。</li>
+<li>解释并应用 <strong>sorted-set stale 索引</strong>：last-seen 作为分数，按截止时间有界查询。</li>
+</ul>
+<p>本章与前一节的关系：保留第 16 节“DynamoDB 房间、离线与幂等”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>本节先实现 Redis 连接与会话，完整 StateStore 断言延到第 18 节；Lua 条件更新从第一节共享后端实现就保持真实语义。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>key prefix</h3>
+<p>所有连接、会话和索引共享可配置命名空间。</p>
+<h3>Lua CAS</h3>
+<p>比较 JSON 中的 generation/绑定后原子更新。</p>
+<h3>sorted-set stale 索引</h3>
+<p>last-seen 作为分数，按截止时间有界查询。</p>
+<h3>实现约束</h3>
+<ol>
+<li>逻辑对象使用 JSON 编解码并设置 TTL。</li>
+<li>redis.Nil 映射 not_found，连接与超时映射 unavailable。</li>
+<li>注入 clock 使逻辑过期与测试确定，miniredis 仅作为行为模拟。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 Redis Store 与配置</h3>
+<p>client 由调用方持有，Store 保存前缀、时钟和队列策略。</p>
+<p>在 <code>ws/store/redis/store.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type Store struct {
+	client Client
+	prefix string
+	now    func() time.Time
+
+	offlineQueueLimit     int
+	offlineOverflowPolicy wsstore.OfflineOverflowPolicy
+	idempotencyWindow     time.Duration
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 Lua 条件删除</h3>
+<p>读取、比较、删除及索引清理由脚本一次执行。</p>
+<p>在 <code>ws/store/redis/connection_session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) DeleteConnectionIfMatch(ctx context.Context, id string, generation uint64) error {
+	const op = &quot;DeleteConnectionIfMatch&quot;
+	if err := checkContext(ctx, op); err != nil {
+		return err
+	}
+	if id == &quot;&quot; {
+		return invalid(op, &quot;connection ID is required&quot;)
+	}
+	result, err := deleteConnectionScript.Run(ctx, s.client,
+		[]string{s.connectionKey(id), s.staleConnectionsKey(), s.connectionExpiryKey()}, id, generation, s.now().UnixNano()).Result()
+	if err != nil {
+		return backendError(op, err)
+	}
+	code, err := scriptInt(result)
+	if err != nil {
+		return dataError(op, err)
+	}
+	if code == 2 {
+		return conflict(op, &quot;connection generation does not match&quot;)
+	}
+	return nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 Lua 原子重绑</h3>
+<p>在脚本内校验 expectedGeneration、递增代数并更新当前连接。</p>
+<p>在 <code>ws/store/redis/connection_session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) BindConnection(ctx context.Context, sessionID, connectionID string, expectedGeneration uint64) (wsstore.Session, error) {
+	const op = &quot;BindConnection&quot;
+	if err := checkContext(ctx, op); err != nil {
+		return wsstore.Session{}, err
+	}
+	if sessionID == &quot;&quot; || connectionID == &quot;&quot; {
+		return wsstore.Session{}, invalid(op, &quot;session ID and connection ID are required&quot;)
+	}
+	now := s.now()
+	current, err := s.GetSession(ctx, sessionID)
+	if err != nil {
+		return wsstore.Session{}, err
+	}
+	if current.Generation != expectedGeneration {
+		return wsstore.Session{}, conflict(op, &quot;session generation does not match&quot;)
+	}
+	expiresAt := current.ExpiresAt
+	if retention := current.ExpiresAt.Sub(current.LastActiveAt); !current.ExpiresAt.IsZero() &amp;&amp; retention &gt; 0 {
+		expiresAt = now.Add(retention)
+	}
+	result, err := bindConnectionScript.Run(ctx, s.client,
+		[]string{s.sessionKey(sessionID), s.sessionExpiryKey()},
+		connectionID, now.UnixNano(), expectedGeneration, timeText(now), timeText(expiresAt),
+		expirationNano(expiresAt), ttlMilliseconds(expiresAt, now),
+	).Result()
+	if err != nil {
+		return wsstore.Session{}, backendError(op, err)
+	}
+	if code, ok := result.(int64); ok {
+		switch code {
+		case 1:
+			return wsstore.Session{}, notFound(op, &quot;session not found&quot;)
+		case 2:
+			return wsstore.Session{}, conflict(op, &quot;session generation does not match&quot;)
+		}
+	}
+	encoded, ok := result.(string)
+	if !ok {
+		return wsstore.Session{}, dataError(op, fmt.Errorf(&quot;unexpected bind result %T&quot;, result))
+	}
+	session, err := decodeSession(encoded)
+	if err != nil {
+		return wsstore.Session{}, dataError(op, err)
+	}
+	return session, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter17RedisConnectionSession(t *testing.T) {
+	ctx := context.Background()
+	store, now := chapter17Store(t)
+	if err := store.CreateSession(ctx, wsstore.Session{SessionID: &quot;redis-s1&quot;, CurrentConnectionID: &quot;redis-c1&quot;, Generation: 1, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutConnection(ctx, wsstore.Connection{ConnectionID: &quot;redis-c1&quot;, SessionID: &quot;redis-s1&quot;, Generation: 1, LastSeenAt: now, State: wsstore.ConnectionStateActive}); err != nil {
+		t.Fatal(err)
+	}
+	bound, err := store.BindConnection(ctx, &quot;redis-s1&quot;, &quot;redis-c2&quot;, 1)
+	if err != nil || bound.Generation != 2 {
+		t.Fatalf(&quot;bind=%#v err=%v&quot;, bound, err)
+	}
+	if err := store.UnbindConnectionIfMatch(ctx, &quot;redis-s1&quot;, &quot;redis-c1&quot;, 1); !wsstore.IsConditionConflict(err) {
+		t.Fatalf(&quot;stale unbind=%v&quot;, err)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>miniredis 上绑定与条件冲突符合契约，Lua 脚本原子路径被执行。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>在 Go 侧 GET 后再无条件 SET。</li>
+<li>消息主体过期却留下 stale/房间索引。</li>
+<li>把 miniredis 结果描述为真实 Redis 网络验证。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Redis 连接与会话”。miniredis 上绑定与条件冲突符合契约，Lua 脚本原子路径被执行。</p>
+<p>下一节：第 18 节“Redis 房间、离线与幂等”。</p>
+</body></html>

@@ -1,0 +1,265 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 15 节：DynamoDB 连接与会话</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 15 节：DynamoDB 连接与会话</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“DynamoDB 连接与会话”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>Memory 的语义已经明确，本节用 DynamoDB 条件写、事务、GSI 和 TTL 字段实现共享连接与会话。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>PK/SK</strong>：单表内区分 Connection、Session 与索引记录。</li>
+<li>解释并应用 <strong>条件表达式</strong>：在 DynamoDB 内部拒绝 generation 或绑定不匹配。</li>
+<li>解释并应用 <strong>TTL</strong>：只提供最终异步删除，读取和维护仍需逻辑过期判断。</li>
+</ul>
+<p>本章与前一节的关系：保留第 14 节“房间与有界广播”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>本节先实现 DynamoDB 连接与会话，暂时移除完整 StateStore 编译断言；第 16 节补齐其余方法后恢复，避免用空方法伪装完整后端。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>PK/SK</h3>
+<p>单表内区分 Connection、Session 与索引记录。</p>
+<h3>条件表达式</h3>
+<p>在 DynamoDB 内部拒绝 generation 或绑定不匹配。</p>
+<h3>TTL</h3>
+<p>只提供最终异步删除，读取和维护仍需逻辑过期判断。</p>
+<h3>实现约束</h3>
+<ol>
+<li>codec 统一属性编解码，时间以可排序格式保存。</li>
+<li>stale/expiry 查询使用 GSI 与 LastEvaluatedKey 分页。</li>
+<li>ConditionalCheckFailed、限流和网络错误映射为统一存储分类。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 DynamoDB 客户端契约</h3>
+<p>窄接口覆盖实际需要的 SDK 操作，进程内 fake 可以实现同一行为。</p>
+<p>在 <code>ws/store/dynamodb/store.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">type Client interface {
+	GetItem(context.Context, *dynamodb.GetItemInput, ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	PutItem(context.Context, *dynamodb.PutItemInput, ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	UpdateItem(context.Context, *dynamodb.UpdateItemInput, ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
+	DeleteItem(context.Context, *dynamodb.DeleteItemInput, ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
+	Query(context.Context, *dynamodb.QueryInput, ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+	TransactWriteItems(context.Context, *dynamodb.TransactWriteItemsInput, ...func(*dynamodb.Options)) (*dynamodb.TransactWriteItemsOutput, error)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 条件删除连接</h3>
+<p>删除与次级索引清理共享条件，旧 generation 不会误删新记录。</p>
+<p>在 <code>ws/store/dynamodb/connection_session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) DeleteConnectionIfMatch(ctx context.Context, id string, generation uint64) error {
+	const op = &quot;DeleteConnectionIfMatch&quot;
+	if err := checkContext(ctx); err != nil {
+		return err
+	}
+	if err := s.check(op); err != nil {
+		return err
+	}
+	if id == &quot;&quot; {
+		return invalid(op, &quot;connection ID is required&quot;)
+	}
+	_, err := s.client.TransactWriteItems(ctx, &amp;dynamodb.TransactWriteItemsInput{TransactItems: []types.TransactWriteItem{
+		{Delete: &amp;types.Delete{
+			TableName: tableName(s.tableName), Key: connectionKey(id),
+			ConditionExpression: awsString(&quot;attribute_not_exists(#pk) OR #generation = :generation&quot;),
+			ExpressionAttributeNames: map[string]string{
+				&quot;#pk&quot;: attrPK, &quot;#generation&quot;: &quot;generation&quot;,
+			},
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				&quot;:generation&quot;: unsignedValue(generation),
+			},
+		}},
+		{Delete: &amp;types.Delete{TableName: tableName(s.tableName), Key: connectionExpiryKey(id)}},
+	}})
+	return backendError(op, err)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 事务绑定会话</h3>
+<p>事务同时更新 Session 与相关连接记录，防止共享部署出现半完成绑定。</p>
+<p>在 <code>ws/store/dynamodb/connection_session.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) BindConnection(ctx context.Context, sessionID, connectionID string, expectedGeneration uint64) (wsstore.Session, error) {
+	const op = &quot;BindConnection&quot;
+	if err := checkContext(ctx); err != nil {
+		return wsstore.Session{}, err
+	}
+	if err := s.check(op); err != nil {
+		return wsstore.Session{}, err
+	}
+	if sessionID == &quot;&quot; || connectionID == &quot;&quot; {
+		return wsstore.Session{}, invalid(op, &quot;session ID and connection ID are required&quot;)
+	}
+	now := s.now()
+	attributes, ok, err := s.getSessionItem(ctx, sessionID)
+	if err != nil {
+		return wsstore.Session{}, backendError(op, err)
+	}
+	if !ok {
+		return wsstore.Session{}, notFound(op, &quot;session not found&quot;)
+	}
+	current, err := decodeSession(attributes)
+	if err != nil {
+		return wsstore.Session{}, wsstore.NewError(wsstore.ErrorCodeInvalid, op, err)
+	}
+	if expired(current.ExpiresAt, now) {
+		return wsstore.Session{}, notFound(op, &quot;session not found&quot;)
+	}
+	if current.Generation != expectedGeneration {
+		return wsstore.Session{}, conflict(op, &quot;session generation does not match&quot;)
+	}
+	expiresAt := current.ExpiresAt
+	if retention := current.ExpiresAt.Sub(current.LastActiveAt); !current.ExpiresAt.IsZero() &amp;&amp; retention &gt; 0 {
+		expiresAt = now.Add(retention)
+	}
+	updateExpression := &quot;SET #currentConnectionId = :connectionID, #generation = #generation + :one, #lastActiveAt = :lastActiveAt&quot;
+	names := map[string]string{
+		&quot;#currentConnectionId&quot;: &quot;currentConnectionId&quot;, &quot;#generation&quot;: &quot;generation&quot;,
+		&quot;#lastActiveAt&quot;: &quot;lastActiveAt&quot;, &quot;#expiresAt&quot;: &quot;expiresAt&quot;,
+	}
+	values := map[string]types.AttributeValue{
+		&quot;:connectionID&quot;: stringValue(connectionID), &quot;:expected&quot;: unsignedValue(expectedGeneration),
+		&quot;:one&quot;: unsignedValue(1), &quot;:lastActiveAt&quot;: numberValue(now.UnixNano()), &quot;:now&quot;: numberValue(now.UnixNano()),
+	}
+	if !expiresAt.IsZero() {
+		updateExpression += &quot;, #expiresAt = :newExpiresAt, #ttl = :ttl, #gsi1pk = :gsi1pk, #gsi1sk = :gsi1sk&quot;
+		names[&quot;#ttl&quot;] = attrTTL
+		names[&quot;#gsi1pk&quot;] = attrGSI1PK
+		names[&quot;#gsi1sk&quot;] = attrGSI1SK
+		values[&quot;:newExpiresAt&quot;] = numberValue(expiresAt.UnixNano())
+		values[&quot;:ttl&quot;] = numberValue(expiresAt.Unix())
+		values[&quot;:gsi1pk&quot;] = stringValue(timePartitionSession)
+		values[&quot;:gsi1sk&quot;] = stringValue(timeKey(expiresAt) + &quot;#&quot; + sessionID)
+	}
+	output, err := s.client.UpdateItem(ctx, &amp;dynamodb.UpdateItemInput{
+		TableName: tableName(s.tableName), Key: sessionKey(sessionID), ReturnValues: types.ReturnValueAllNew,
+		UpdateExpression:          awsString(updateExpression),
+		ConditionExpression:       awsString(&quot;#generation = :expected AND &quot; + liveExpiryCondition),
+		ExpressionAttributeNames:  names,
+		ExpressionAttributeValues: values,
+	})
+	if err == nil {
+		session, decodeErr := decodeSession(output.Attributes)
+		if decodeErr != nil {
+			return wsstore.Session{}, wsstore.NewError(wsstore.ErrorCodeInvalid, op, decodeErr)
+		}
+		return session, nil
+	}
+	if !wsstore.IsConditionConflict(backendError(op, err)) {
+		return wsstore.Session{}, backendError(op, err)
+	}
+	attributes, ok, getErr := s.getSessionItem(ctx, sessionID)
+	if getErr != nil {
+		return wsstore.Session{}, backendError(op, getErr)
+	}
+	if !ok {
+		return wsstore.Session{}, notFound(op, &quot;session not found&quot;)
+	}
+	current, decodeErr := decodeSession(attributes)
+	if decodeErr != nil {
+		return wsstore.Session{}, wsstore.NewError(wsstore.ErrorCodeInvalid, op, decodeErr)
+	}
+	if expired(current.ExpiresAt, now) {
+		return wsstore.Session{}, notFound(op, &quot;session not found&quot;)
+	}
+	return wsstore.Session{}, conflict(op, &quot;session generation does not match&quot;)
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter15DynamoDBConnectionSession(t *testing.T) {
+	ctx := context.Background()
+	store, now := chapter15Store(t)
+	if err := store.CreateSession(ctx, wsstore.Session{SessionID: &quot;ddb-s1&quot;, CurrentConnectionID: &quot;ddb-c1&quot;, Generation: 1, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.PutConnection(ctx, wsstore.Connection{ConnectionID: &quot;ddb-c1&quot;, SessionID: &quot;ddb-s1&quot;, Generation: 1, LastSeenAt: now, State: wsstore.ConnectionStateActive}); err != nil {
+		t.Fatal(err)
+	}
+	bound, err := store.BindConnection(ctx, &quot;ddb-s1&quot;, &quot;ddb-c2&quot;, 1)
+	if err != nil || bound.Generation != 2 {
+		t.Fatalf(&quot;bind=%#v err=%v&quot;, bound, err)
+	}
+	if err := store.UnbindConnectionIfMatch(ctx, &quot;ddb-s1&quot;, &quot;ddb-c1&quot;, 1); !wsstore.IsConditionConflict(err) {
+		t.Fatalf(&quot;stale unbind=%v&quot;, err)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>在 dynamodbtest.Fake 上完成绑定和旧解绑冲突验证；没有访问真实 DynamoDB。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>把 DynamoDB TTL 当实时删除。</li>
+<li>忽略分页的 LastEvaluatedKey。</li>
+<li>用先读后写替代条件表达式。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“DynamoDB 连接与会话”。在 dynamodbtest.Fake 上完成绑定和旧解绑冲突验证；没有访问真实 DynamoDB。</p>
+<p>下一节：第 16 节“DynamoDB 房间、离线与幂等”。</p>
+</body></html>

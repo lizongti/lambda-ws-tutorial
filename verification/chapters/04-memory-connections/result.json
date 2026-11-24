@@ -1,0 +1,38 @@
+{
+  "number": 4,
+  "slug": "memory-connections",
+  "title": "Memory 连接与会话",
+  "pdf": "chapters/04-memory-connections/04-memory-connections.pdf",
+  "zip": "chapters/04-memory-connections/04-memory-connections.zip",
+  "snapshot": "work/snapshots/04-memory-connections",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 16,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/04-memory-connections",
+      "startedAt": "2026-11-24T06:49:35.843Z",
+      "exitCode": 0,
+      "log": "verification/chapters/04-memory-connections/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/04-memory-connections/04-memory-connections",
+      "startedAt": "2026-11-24T06:49:42.393Z",
+      "exitCode": 0,
+      "log": "verification/chapters/04-memory-connections/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/04-memory-connections/04-memory-connections",
+      "startedAt": "2026-11-24T06:49:44.249Z",
+      "exitCode": 0,
+      "log": "verification/chapters/04-memory-connections/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "5e9b084416667c17ee3e4284ba03fb165489636c96412a7b0d3302b0845dc765",
+  "zipSha256": "105415de9672cf0bc58c8e57edd5026bee855b62053de3eeb7cef695206bf0db",
+  "verifiedAt": "2026-11-24T06:49:49.436Z"
+}

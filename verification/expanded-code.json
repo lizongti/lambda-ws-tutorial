@@ -1,0 +1,125 @@
+{
+  "chapters": [
+    {
+      "chapter": "01-protocol",
+      "codeDirectory": "chapters/01-protocol/",
+      "fileCount": 5,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "02-options-config",
+      "codeDirectory": "chapters/02-options-config/",
+      "fileCount": 12,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "03-store-contracts",
+      "codeDirectory": "chapters/03-store-contracts/",
+      "fileCount": 13,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "04-memory-connections",
+      "codeDirectory": "chapters/04-memory-connections/",
+      "fileCount": 16,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "05-memory-features",
+      "codeDirectory": "chapters/05-memory-features/",
+      "fileCount": 20,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "06-pusher",
+      "codeDirectory": "chapters/06-pusher/",
+      "fileCount": 22,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "07-router",
+      "codeDirectory": "chapters/07-router/",
+      "fileCount": 25,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "08-lifecycle",
+      "codeDirectory": "chapters/08-lifecycle/",
+      "fileCount": 37,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "09-engine",
+      "codeDirectory": "chapters/09-engine/",
+      "fileCount": 41,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "10-auth",
+      "codeDirectory": "chapters/10-auth/",
+      "fileCount": 42,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "11-maintenance",
+      "codeDirectory": "chapters/11-maintenance/",
+      "fileCount": 45,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "12-reconnect",
+      "codeDirectory": "chapters/12-reconnect/",
+      "fileCount": 46,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "13-offline",
+      "codeDirectory": "chapters/13-offline/",
+      "fileCount": 47,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "14-rooms",
+      "codeDirectory": "chapters/14-rooms/",
+      "fileCount": 49,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "15-dynamodb-connections",
+      "codeDirectory": "chapters/15-dynamodb-connections/",
+      "fileCount": 54,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "16-dynamodb-features",
+      "codeDirectory": "chapters/16-dynamodb-features/",
+      "fileCount": 58,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "17-redis-connections",
+      "codeDirectory": "chapters/17-redis-connections/",
+      "fileCount": 61,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "18-redis-features",
+      "codeDirectory": "chapters/18-redis-features/",
+      "fileCount": 65,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "19-server-observability",
+      "codeDirectory": "chapters/19-server-observability/",
+      "fileCount": 117,
+      "zipRemoved": true
+    },
+    {
+      "chapter": "20-integration",
+      "codeDirectory": "chapters/20-integration/",
+      "fileCount": 120,
+      "zipRemoved": true
+    }
+  ],
+  "verifiedAt": "2026-11-24T07:41:02.848Z"
+}

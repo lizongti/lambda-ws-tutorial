@@ -1,0 +1,37 @@
+package server
+
+import (
+	"github.com/aura-studio/lambda/event"
+	"github.com/aura-studio/lambda/http"
+	"github.com/aura-studio/lambda/reqresp"
+	"github.com/aura-studio/lambda/sqs"
+	"github.com/aura-studio/lambda/ws"
+)
+
+func Serve(opts ...Option) error {
+	options := &Options{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt.Apply(options)
+		}
+	}
+
+	switch options.Lambda {
+	case "event":
+		event.Serve(options.Event, options.Dynamic)
+		return nil
+	case "sqs":
+		sqs.Serve(options.Sqs, options.Dynamic)
+		return nil
+	case "reqresp":
+		reqresp.Serve(options.ReqResp, options.Dynamic)
+		return nil
+	case "ws":
+		ws.Serve(options.Ws, options.Dynamic)
+		return nil
+	case "http":
+		fallthrough
+	default:
+		return http.Serve(options.Http, options.Dynamic)
+	}
+}

@@ -1,0 +1,38 @@
+{
+  "number": 6,
+  "slug": "pusher",
+  "title": "Pusher 与 API Gateway 适配器",
+  "pdf": "chapters/06-pusher/06-pusher.pdf",
+  "zip": "chapters/06-pusher/06-pusher.zip",
+  "snapshot": "work/snapshots/06-pusher",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 22,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/06-pusher",
+      "startedAt": "2026-11-24T06:50:03.064Z",
+      "exitCode": 0,
+      "log": "verification/chapters/06-pusher/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/06-pusher/06-pusher",
+      "startedAt": "2026-11-24T06:50:09.700Z",
+      "exitCode": 0,
+      "log": "verification/chapters/06-pusher/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/06-pusher/06-pusher",
+      "startedAt": "2026-11-24T06:50:12.425Z",
+      "exitCode": 0,
+      "log": "verification/chapters/06-pusher/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "8034d8a736427aa740a1690818073542810008d07ebc6fdfbeac343e4543308b",
+  "zipSha256": "4a91d9d26bb4e95155d509d08702d8f77c3b50a6a9a743a67d5296a8d8d8ceee",
+  "verifiedAt": "2026-11-24T06:50:17.994Z"
+}

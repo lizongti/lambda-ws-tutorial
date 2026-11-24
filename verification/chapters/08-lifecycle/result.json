@@ -1,0 +1,38 @@
+{
+  "number": 8,
+  "slug": "lifecycle",
+  "title": "API Gateway 事件与生命周期",
+  "pdf": "chapters/08-lifecycle/08-lifecycle.pdf",
+  "zip": "chapters/08-lifecycle/08-lifecycle.zip",
+  "snapshot": "work/snapshots/08-lifecycle",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 37,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/08-lifecycle",
+      "startedAt": "2026-11-24T06:50:26.886Z",
+      "exitCode": 0,
+      "log": "verification/chapters/08-lifecycle/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/08-lifecycle/08-lifecycle",
+      "startedAt": "2026-11-24T06:50:34.020Z",
+      "exitCode": 0,
+      "log": "verification/chapters/08-lifecycle/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/08-lifecycle/08-lifecycle",
+      "startedAt": "2026-11-24T06:50:36.927Z",
+      "exitCode": 0,
+      "log": "verification/chapters/08-lifecycle/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "db4921b2043ce5fb320ba6ea41c419c2d987b0faf058e4d8a9648964c7034e37",
+  "zipSha256": "11e9611503540535ae52a92607f69393f89408f09cc86d5315a7c6031a04b7f6",
+  "verifiedAt": "2026-11-24T06:50:43.736Z"
+}

@@ -1,0 +1,38 @@
+{
+  "number": 14,
+  "slug": "rooms",
+  "title": "房间与有界广播",
+  "pdf": "chapters/14-rooms/14-rooms.pdf",
+  "zip": "chapters/14-rooms/14-rooms.zip",
+  "snapshot": "work/snapshots/14-rooms",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 49,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/14-rooms",
+      "startedAt": "2026-11-24T06:52:10.725Z",
+      "exitCode": 0,
+      "log": "verification/chapters/14-rooms/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/14-rooms/14-rooms",
+      "startedAt": "2026-11-24T06:52:19.263Z",
+      "exitCode": 0,
+      "log": "verification/chapters/14-rooms/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/14-rooms/14-rooms",
+      "startedAt": "2026-11-24T06:52:22.063Z",
+      "exitCode": 0,
+      "log": "verification/chapters/14-rooms/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "bae86512d1605cd5360b7eeb68a6d928eb7f20334b163646df4746f1aa72a44d",
+  "zipSha256": "d8e9601b7c333ce44a7a7b415f5cc1739004e5efe107634c8b91b545c9436818",
+  "verifiedAt": "2026-11-24T06:52:28.749Z"
+}

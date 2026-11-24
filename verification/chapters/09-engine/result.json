@@ -1,0 +1,38 @@
+{
+  "number": 9,
+  "slug": "engine",
+  "title": "Engine 与同连接消息闭环",
+  "pdf": "chapters/09-engine/09-engine.pdf",
+  "zip": "chapters/09-engine/09-engine.zip",
+  "snapshot": "work/snapshots/09-engine",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 41,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/09-engine",
+      "startedAt": "2026-11-24T06:50:43.754Z",
+      "exitCode": 0,
+      "log": "verification/chapters/09-engine/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/09-engine/09-engine",
+      "startedAt": "2026-11-24T06:50:51.595Z",
+      "exitCode": 0,
+      "log": "verification/chapters/09-engine/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/09-engine/09-engine",
+      "startedAt": "2026-11-24T06:50:54.375Z",
+      "exitCode": 0,
+      "log": "verification/chapters/09-engine/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "dc5261edc14fb7fe817961905afc0549b85b53c195a49cf37f604c667a48c8b0",
+  "zipSha256": "7bab5278cf77a2e0e7b495fd04cdc1f9401402cd6c13a3066c2c1e06d36621e8",
+  "verifiedAt": "2026-11-24T06:51:01.226Z"
+}

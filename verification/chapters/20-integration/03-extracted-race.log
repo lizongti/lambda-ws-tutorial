@@ -1,0 +1,18 @@
+$ go test -mod=readonly -race -count=1 ./...
+?   	github.com/aura-studio/lambda/dynamic	[no test files]
+ok  	github.com/aura-studio/lambda/event	2.194s
+?   	github.com/aura-studio/lambda/event/client	[no test files]
+?   	github.com/aura-studio/lambda/http	[no test files]
+?   	github.com/aura-studio/lambda/http/client	[no test files]
+?   	github.com/aura-studio/lambda/reqresp	[no test files]
+?   	github.com/aura-studio/lambda/reqresp/client	[no test files]
+?   	github.com/aura-studio/lambda/server	[no test files]
+?   	github.com/aura-studio/lambda/sqs	[no test files]
+?   	github.com/aura-studio/lambda/sqs/client	[no test files]
+ok  	github.com/aura-studio/lambda/tests	4.033s
+ok  	github.com/aura-studio/lambda/ws	1.171s
+?   	github.com/aura-studio/lambda/ws/store	[no test files]
+ok  	github.com/aura-studio/lambda/ws/store/dynamodb	2.807s
+?   	github.com/aura-studio/lambda/ws/store/dynamodb/dynamodbtest	[no test files]
+ok  	github.com/aura-studio/lambda/ws/store/memory	1.150s
+ok  	github.com/aura-studio/lambda/ws/store/redis	2.605s

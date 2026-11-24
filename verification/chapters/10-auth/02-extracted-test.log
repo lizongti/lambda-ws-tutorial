@@ -1,0 +1,6 @@
+$ go test -mod=readonly -count=1 ./...
+?   	github.com/aura-studio/lambda/dynamic	[no test files]
+ok  	github.com/aura-studio/lambda/tests	0.527s
+?   	github.com/aura-studio/lambda/ws	[no test files]
+?   	github.com/aura-studio/lambda/ws/store	[no test files]
+?   	github.com/aura-studio/lambda/ws/store/memory	[no test files]

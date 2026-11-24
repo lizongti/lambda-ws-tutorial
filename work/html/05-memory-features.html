@@ -1,0 +1,285 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第 05 节：Memory 房间、离线与幂等</title><style>@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color: #1f2937;
+  background: #ffffff;
+  font-family: "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.72;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 178mm; }
+h1, h2, h3, h4 { color: #123b63; line-height: 1.35; break-after: avoid-page; }
+h1 { font-size: 23pt; border-bottom: 3px solid #2f6fa9; padding-bottom: 8px; margin: 0 0 18px; }
+h2 { font-size: 16pt; border-bottom: 1px solid #b9c9d8; padding-bottom: 5px; margin-top: 25px; }
+h3 { font-size: 12.5pt; margin-top: 20px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 23px; }
+li { margin: 4px 0; }
+blockquote { margin: 14px 0; padding: 9px 14px; border-left: 4px solid #2f6fa9; background: #eef5fb; color: #29465f; }
+code { font-family: "Cascadia Code", "Consolas", monospace; font-size: 9pt; }
+p code, li code { color: #9a3412; background: #fff7ed; padding: 1px 4px; border-radius: 3px; }
+pre {
+  position: relative;
+  margin: 10px 0 14px;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #172033;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  tab-size: 4;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+pre code { white-space: inherit; overflow-wrap: inherit; word-break: inherit; font-size: 8.2pt; line-height: 1.5; }
+pre code.language-sh { color: #14532d; background: #f0fdf4; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.5pt; }
+th, td { border: 1px solid #b8c4d0; padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #eaf1f7; color: #123b63; }
+a { color: #1d5f99; text-decoration: none; }
+strong { color: #172f47; }
+</style></head><body><h1>第 05 节：Memory 房间、离线与幂等</h1>
+<blockquote>
+<p>目标：完成本章代码 ZIP 中的“Memory 房间、离线与幂等”阶段。读者需要会 Go 基础语法、接口和测试，不需要已有 AWS WebSocket 经验。</p>
+</blockquote>
+<h2>本节目录</h2>
+<ol>
+<li>学习目标与问题</li>
+<li>关键概念与设计</li>
+<li>按步骤实现</li>
+<li>运行与验证</li>
+<li>常见错误与小结</li>
+</ol>
+<h2>1. 学习目标与问题</h2>
+<p>连接和会话已经可靠，本节补齐 Memory 的完整 StateStore：通用房间、离线队列和入站幂等。</p>
+<p>完成本节后，你将能够：</p>
+<ul>
+<li>解释并应用 <strong>幂等成员</strong>：roomId + sessionId 决定唯一成员，重复 Join 不产生重复记录。</li>
+<li>解释并应用 <strong>离线 sequence</strong>：每个 Session 内单调递增，为重连补发提供确定顺序。</li>
+<li>解释并应用 <strong>幂等预留</strong>：messageId 首次 Begin 获得处理权，后续调用看到已有记录。</li>
+</ul>
+<p>本章与前一节的关系：保留第 04 节“Memory 连接与会话”的累计代码，再加入本章能力。</p>
+<h3>过渡实现与后续替换</h3>
+<p>恢复第 04 节暂时移除的 Memory StateStore 编译断言；房间、离线和幂等方法现已齐备，不再需要过渡声明。</p>
+<h2>2. 关键概念与设计</h2>
+<h3>幂等成员</h3>
+<p>roomId + sessionId 决定唯一成员，重复 Join 不产生重复记录。</p>
+<h3>离线 sequence</h3>
+<p>每个 Session 内单调递增，为重连补发提供确定顺序。</p>
+<h3>幂等预留</h3>
+<p>messageId 首次 Begin 获得处理权，后续调用看到已有记录。</p>
+<h3>实现约束</h3>
+<ol>
+<li>队列限制和 reject-new/evict-oldest 在锁内执行。</li>
+<li>Ack 校验 Session、messageId 和 generation，旧世代不能删除新世代消息。</li>
+<li>删除 Session 时同步清理房间、离线和幂等索引。</li>
+</ol>
+<h3>AWS WebSocket 在整体流程中的位置</h3>
+<p>客户端实际连接由 API Gateway 持有。Lambda 接收事件，Engine 读取或更新 StateStore，并通过 Pusher 调用 Management API。Connection_ID 指向一次物理连接，Session_ID 才是可以跨重连保留的逻辑身份。</p>
+<p>本章仍采用同样的边界：Lambda return body 只表达集成状态，业务 response/event 通过 PostToConnection 推送。Memory、DynamoDB fake 和 miniredis 仅用于本地验证。</p>
+<h2>3. 按步骤实现</h2>
+<h3>3.1 加入通用房间</h3>
+<p>成员只保存框架绑定，不包含任何游戏房间状态。</p>
+<p>在 <code>ws/store/memory/room.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) Join(ctx context.Context, member wsstore.RoomMember) error {
+	const op = &quot;Join&quot;
+	if err := checkContext(ctx); err != nil {
+		return err
+	}
+	if member.RoomID == &quot;&quot; || member.SessionID == &quot;&quot; || member.ConnectionID == &quot;&quot; {
+		return invalid(op, &quot;room, session, and connection IDs are required&quot;)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.joinLocked(member)
+	return nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.2 有界离线入队</h3>
+<p>分配 sequence、复制 Envelope 并应用队列上限，避免重试共享底层字节。</p>
+<p>在 <code>ws/store/memory/offline.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) Append(ctx context.Context, msg wsstore.OfflineMessage) error {
+	const op = &quot;Append&quot;
+	if err := checkContext(ctx); err != nil {
+		return err
+	}
+	if msg.SessionID == &quot;&quot; || msg.MessageID == &quot;&quot; {
+		return invalid(op, &quot;session ID and message ID are required&quot;)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	session, ok := s.sessions[msg.SessionID]
+	if !ok || expired(session.ExpiresAt, now) {
+		return notFound(op, &quot;session not found&quot;)
+	}
+	if msg.Generation != session.Generation {
+		return conflict(op, &quot;offline message generation does not match session&quot;)
+	}
+	if s.offlineQueueLimit &lt;= 0 {
+		return invalid(op, &quot;offline queue limit must be positive&quot;)
+	}
+	if s.offlineOverflowPolicy != wsstore.OfflineOverflowRejectNew &amp;&amp;
+		s.offlineOverflowPolicy != wsstore.OfflineOverflowEvictOldest {
+		return invalid(op, &quot;unknown offline overflow policy&quot;)
+	}
+	if !msg.ExpiresAt.IsZero() &amp;&amp; !msg.ExpiresAt.After(now) {
+		return invalid(op, &quot;offline message is already expired&quot;)
+	}
+	queue := s.offline[msg.SessionID]
+	if queue == nil {
+		queue = make(map[string]wsstore.OfflineMessage)
+		s.offline[msg.SessionID] = queue
+	}
+	if _, exists := queue[msg.MessageID]; exists {
+		return conflict(op, &quot;offline message ID already exists&quot;)
+	}
+
+	// Expired entries no longer consume queue capacity, while their sequence
+	// remains consumed to preserve monotonicity for the live session.
+	for id, queued := range queue {
+		if expired(queued.ExpiresAt, now) {
+			delete(queue, id)
+		}
+	}
+	if len(queue) &gt;= s.offlineQueueLimit {
+		switch s.offlineOverflowPolicy {
+		case wsstore.OfflineOverflowRejectNew:
+			return quotaExceeded(op, &quot;offline queue is full&quot;)
+		case wsstore.OfflineOverflowEvictOldest:
+			oldestID := &quot;&quot;
+			var oldestSequence uint64
+			for id, queued := range queue {
+				if oldestID == &quot;&quot; || queued.Sequence &lt; oldestSequence {
+					oldestID = id
+					oldestSequence = queued.Sequence
+				}
+			}
+			delete(queue, oldestID)
+		}
+	}
+
+	if msg.CreatedAt.IsZero() {
+		msg.CreatedAt = now
+	}
+	s.sequences[msg.SessionID]++
+	msg.Sequence = s.sequences[msg.SessionID]
+	msg.State = wsstore.OfflineMessageStatePending
+	msg.SentAt = nil
+	queue[msg.MessageID] = cloneOfflineMessage(msg)
+	return nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.3 预留消息处理权</h3>
+<p>同一个临界区完成查找与创建，并发调用者不能同时获得 acquired=true。</p>
+<p>在 <code>ws/store/memory/idempotency.go</code> 中加入或保留以下实现：</p>
+<pre><code class="language-go">func (s *Store) BeginIdempotency(ctx context.Context, record wsstore.IdempotencyRecord) (wsstore.IdempotencyRecord, bool, error) {
+	const op = &quot;BeginIdempotency&quot;
+	if err := checkContext(ctx); err != nil {
+		return wsstore.IdempotencyRecord{}, false, err
+	}
+	if record.SessionID == &quot;&quot; || record.MessageID == &quot;&quot; {
+		return wsstore.IdempotencyRecord{}, false, invalid(op, &quot;session ID and message ID are required&quot;)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := s.now()
+	byMessage := s.idempotency[record.SessionID]
+	if current, ok := byMessage[record.MessageID]; ok &amp;&amp; !expired(current.ExpiresAt, now) {
+		return cloneIdempotencyRecord(current), false, nil
+	}
+	if record.CreatedAt.IsZero() {
+		record.CreatedAt = now
+	}
+	if record.ExpiresAt.IsZero() {
+		if s.idempotencyWindow &lt;= 0 {
+			return wsstore.IdempotencyRecord{}, false, invalid(op, &quot;idempotency window must be positive&quot;)
+		}
+		record.ExpiresAt = now.Add(s.idempotencyWindow)
+	}
+	if !record.ExpiresAt.After(now) {
+		return wsstore.IdempotencyRecord{}, false, invalid(op, &quot;idempotency record is already expired&quot;)
+	}
+	record.State = wsstore.IdempotencyStateProcessing
+	record.Response = nil
+	if byMessage == nil {
+		byMessage = make(map[string]wsstore.IdempotencyRecord)
+		s.idempotency[record.SessionID] = byMessage
+	}
+	byMessage[record.MessageID] = cloneIdempotencyRecord(record)
+	return cloneIdempotencyRecord(record), true, nil
+}
+</code></pre>
+<p>这段代码是本章 ZIP 的连续原文。先理解输入、输出和不变量，再查看 ZIP 中该文件的其余部分；不要只复制片段而忽略它依赖的累计代码。</p>
+<h3>3.4 用测试固定本章行为</h3>
+<p>每章都保留独立测试。测试不仅覆盖成功路径，也把本章最容易破坏的边界写成可重复断言。</p>
+<pre><code class="language-go">func TestChapter05RoomOfflineAndIdempotency(t *testing.T) {
+	ctx := context.Background()
+	store, now := chapter04Store()
+	session := wsstore.Session{SessionID: &quot;s1&quot;, CurrentConnectionID: &quot;c1&quot;, Generation: 1, ExpiresAt: now.Add(time.Hour)}
+	if err := store.CreateSession(ctx, session); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Join(ctx, wsstore.RoomMember{RoomID: &quot;lobby&quot;, SessionID: &quot;s1&quot;, ConnectionID: &quot;c1&quot;, Generation: 1}); err != nil {
+		t.Fatal(err)
+	}
+	members, cursor, err := store.Members(ctx, &quot;lobby&quot;, 10, &quot;&quot;)
+	if err != nil || len(members) != 1 || cursor != &quot;&quot; {
+		t.Fatalf(&quot;members=%v cursor=%q err=%v&quot;, members, cursor, err)
+	}
+	if err := store.Append(ctx, wsstore.OfflineMessage{SessionID: &quot;s1&quot;, MessageID: &quot;m1&quot;, Generation: 1, Envelope: []byte(`{&quot;ok&quot;:true}`), CreatedAt: now, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	pending, err := store.ListPending(ctx, &quot;s1&quot;, 10)
+	if err != nil || len(pending) != 1 || pending[0].Sequence != 1 {
+		t.Fatalf(&quot;pending=%#v err=%v&quot;, pending, err)
+	}
+	if err := store.MarkSent(ctx, &quot;s1&quot;, &quot;m1&quot;, 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Ack(ctx, &quot;s1&quot;, &quot;m1&quot;, 1); err != nil {
+		t.Fatal(err)
+	}
+	record, acquired, err := store.BeginIdempotency(ctx, wsstore.IdempotencyRecord{SessionID: &quot;s1&quot;, MessageID: &quot;incoming-1&quot;, ExpiresAt: now.Add(time.Minute)})
+	if err != nil || !acquired || record.MessageID != &quot;incoming-1&quot; {
+		t.Fatalf(&quot;begin=%#v acquired=%t err=%v&quot;, record, acquired, err)
+	}
+	if _, acquired, err = store.BeginIdempotency(ctx, record); err != nil || acquired {
+		t.Fatalf(&quot;duplicate acquired=%t err=%v&quot;, acquired, err)
+	}
+}
+</code></pre>
+<h2>4. 运行与验证</h2>
+<p>将本章 ZIP 解压到空目录，进入其根目录后执行：</p>
+<pre><code class="language-sh">go version
+go mod download
+go test -mod=readonly -count=1 ./...
+</code></pre>
+<p>再执行 race 验证：</p>
+<pre><code class="language-sh">go test -mod=readonly -race -count=1 ./...
+</code></pre>
+<h3>预期结果</h3>
+<p>房间成员、离线 sequence、MarkSent/Ack 和重复 Begin 的行为符合契约，并通过 race。</p>
+<p>测试输出中的具体耗时可以不同，但所有包必须返回 <code>ok</code> 或 <code>[no test files]</code>，命令退出码必须为 0。<code>-mod=readonly</code> 用来防止测试静默改写依赖文件。</p>
+<h3>验证边界</h3>
+<p>本章使用本地 Go 工具和进程内 fake。DynamoDB fake 不是 DynamoDB Local，miniredis 不是实际 Redis 服务，FakePusher/SDK fake 不会访问 API Gateway。本章没有声明真实 AWS 部署或网络验证。</p>
+<h2>5. 常见错误与小结</h2>
+<ul>
+<li>只限制消息条数却忘记过期索引。</li>
+<li>把 postSuccess 当作客户端业务确认。</li>
+<li>允许旧 generation 的 Ack 删除当前消息。</li>
+</ul>
+<h3>小结</h3>
+<p>本章完成了“Memory 房间、离线与幂等”。房间成员、离线 sequence、MarkSent/Ack 和重复 Begin 的行为符合契约，并通过 race。</p>
+<p>下一节：第 06 节“Pusher 与 API Gateway 适配器”。</p>
+</body></html>

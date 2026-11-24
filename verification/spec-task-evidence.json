@@ -1,0 +1,1537 @@
+{
+  "entries": [
+    {
+      "task": "1",
+      "text": "初始化临时工作区、工具依赖和只读源快照",
+      "specLine": 9,
+      "evidence": [
+        "tools/snapshot.mjs",
+        "verification/source-manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "1.1",
+      "text": "创建 `source/`、`chapters/`、`work/`、`docs/`、`tools/`、`verification/` 目录和独立 `tools/package.json`，锁定 `marked`、`puppeteer-core`、`archiver`，并确认目标根目录存在时立即失败。",
+      "specLine": 11,
+      "evidence": [
+        "tools/snapshot.mjs",
+        "verification/source-manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "1.2",
+      "text": "实现 `tools/snapshot.mjs`，从当前工作树复制完整 `ws/`、`tests/ws*.go`、server 接入、`go.mod/go.sum` 和必要本地编译闭包，不使用 Git HEAD，不修改原文件。",
+      "specLine": 13,
+      "evidence": [
+        "tools/snapshot.mjs",
+        "verification/source-manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "1.3",
+      "text": "生成 `verification/source-manifest.json`，记录规范化相对路径、字节数、SHA-256、Go 版本和捕获时间，并在后续运行时检测 Source_Snapshot 漂移。",
+      "specLine": 15,
+      "evidence": [
+        "tools/snapshot.mjs",
+        "verification/source-manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "1.4",
+      "text": "为快照工具编写临时 fixture 测试，覆盖未跟踪文件、换行字节保持、目录已存在拒绝和源哈希变化拒绝。",
+      "specLine": 17,
+      "evidence": [
+        "tools/snapshot.mjs",
+        "verification/source-manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "2",
+      "text": "实现章节目录、累计快照构建器和测试执行器",
+      "specLine": 20,
+      "evidence": [
+        "tools/build.mjs",
+        "tools/chapters.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "2.1",
+      "text": "创建 `tools/chapters.json`，定义 20 个编号、slug、标题、源码路径、测试命令、race 标记和打包 allowlist。",
+      "specLine": 22,
+      "evidence": [
+        "tools/build.mjs",
+        "tools/chapters.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "2.2",
+      "text": "实现 `tools/build.mjs` 的单章与范围构建参数、上一快照复制、显式变更应用、工作快照测试和失败章节诊断。",
+      "specLine": 24,
+      "evidence": [
+        "tools/build.mjs",
+        "tools/chapters.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "2.3",
+      "text": "实现 Go 命令执行器，统一使用 `-mod=readonly` 和 `-count=1`，捕获工作目录、命令、退出码和日志，检测 `go.mod/go.sum` 是否被改写。",
+      "specLine": 26,
+      "evidence": [
+        "tools/build.mjs",
+        "tools/chapters.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "2.4",
+      "text": "为构建器编写最小 Go fixture 测试，证明编译失败返回非零且不发布半成品，范围重建不改动 Source_Snapshot。",
+      "specLine": 28,
+      "evidence": [
+        "tools/build.mjs",
+        "tools/chapters.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3",
+      "text": "实现中文 Markdown 检查、HTML 模板和 PDF 渲染器",
+      "specLine": 31,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3.1",
+      "text": "创建统一章节 Markdown 模板和 A4 CSS，包含学习目标、目录、回顾、动机、实现步骤、代码、验证、常见错误、小结、中文字体、长代码换行和分页规则。",
+      "specLine": 33,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3.2",
+      "text": "在 `tools/render.mjs` 中实现 `path=` Go fence 提取、连续原文匹配、安全路径检查、省略占位符拒绝和引用编号一致性检查。",
+      "specLine": 35,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3.3",
+      "text": "使用 `marked` 生成独立 UTF-8 HTML，对代码与命令正确转义，渲染标题、表格、代码块和预生成图形，不遗留原始占位块。",
+      "specLine": 37,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3.4",
+      "text": "使用 `puppeteer-core` 驱动本机 Edge/Chrome 输出带章节标题和页码的 PDF，隐藏本机 URL，先写临时文件再原子发布，并对空文件和无效 PDF 失败。",
+      "specLine": 39,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "3.5",
+      "text": "用中文、长代码行和多页 fixture 验证字体、页码、代码不裁切、HTML 转义和渲染失败路径。",
+      "specLine": 41,
+      "evidence": [
+        "tools/render.mjs",
+        "docs/assets/tutorial.css",
+        "verification/visual-inspection.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "4",
+      "text": "实现显式清单 ZIP 打包、解包复测和交付 manifest",
+      "specLine": 44,
+      "evidence": [
+        "tools/zip.mjs",
+        "tools/verify.mjs",
+        "manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "4.1",
+      "text": "使用 `archiver` 按排序后的 allowlist 打包累计快照，写入 `<NN>-<slug>/` 根目录和 README，不包含 PDF、其他 ZIP、缓存、编辑器配置或本机路径。",
+      "specLine": 46,
+      "evidence": [
+        "tools/zip.mjs",
+        "tools/verify.mjs",
+        "manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "4.2",
+      "text": "实现 ZIP 条目重复、绝对路径、盘符、反斜杠、`..`、路径穿越、敏感文件和意外文件检查，并验证交付 PDF/ZIP 数量及编号配对。",
+      "specLine": 48,
+      "evidence": [
+        "tools/zip.mjs",
+        "tools/verify.mjs",
+        "manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "4.3",
+      "text": "实现每节 ZIP 全新解包、文档命令复测、race 条件执行、日志记录和测试后依赖文件一致性检查。",
+      "specLine": 50,
+      "evidence": [
+        "tools/zip.mjs",
+        "tools/verify.mjs",
+        "manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "4.4",
+      "text": "生成根 `manifest.json` 和每节结果，记录 PDF、ZIP、快照、测试命令、摘录数量和 SHA-256；只有所有发布步骤成功后才原子更新。",
+      "specLine": 52,
+      "evidence": [
+        "tools/zip.mjs",
+        "tools/verify.mjs",
+        "manifest.json",
+        "verification/self-test.log"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "5",
+      "text": "制作第 01 节：JSON Envelope 与协议校验",
+      "specLine": 55,
+      "evidence": [
+        "chapters/01-protocol/01-protocol.pdf",
+        "chapters/01-protocol/01-protocol.zip",
+        "verification/chapters/01-protocol/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "5.1",
+      "text": "从空 Go 模块建立 `01-protocol` 累计快照，实现协议版本、Envelope、ErrorBody、控制消息、构造函数、JSON 编解码和安全协议错误。",
+      "specLine": 57,
+      "evidence": [
+        "chapters/01-protocol/01-protocol.pdf",
+        "chapters/01-protocol/01-protocol.zip",
+        "verification/chapters/01-protocol/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "5.2",
+      "text": "实现 malformed JSON、多个顶层值、版本、必填字段、UTF-8、大小、path/ID 边界和 payload 不变性测试及本章 README。",
+      "specLine": 59,
+      "evidence": [
+        "chapters/01-protocol/01-protocol.pdf",
+        "chapters/01-protocol/01-protocol.zip",
+        "verification/chapters/01-protocol/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "5.3",
+      "text": "创建 `docs/01-protocol.md`，用请求/响应/错误示例解释协议边界，并引用配对快照中的真实协议代码与测试。",
+      "specLine": 61,
+      "evidence": [
+        "chapters/01-protocol/01-protocol.pdf",
+        "chapters/01-protocol/01-protocol.zip",
+        "verification/chapters/01-protocol/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "5.4",
+      "text": "构建 `01-protocol.pdf/.zip`，从 ZIP 解包运行协议测试，检查摘录、文件清单和 PDF 首页/代码页/末页。",
+      "specLine": 63,
+      "evidence": [
+        "chapters/01-protocol/01-protocol.pdf",
+        "chapters/01-protocol/01-protocol.zip",
+        "verification/chapters/01-protocol/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "6",
+      "text": "制作第 02 节：Options、默认配置与 YAML",
+      "specLine": 66,
+      "evidence": [
+        "chapters/02-options-config/02-options-config.pdf",
+        "chapters/02-options-config/02-options-config.zip",
+        "verification/chapters/02-options-config/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "6.1",
+      "text": "在第 01 节快照上实现 Option/OptionFunc、配置分组、安全默认值、Clock/IDGenerator/依赖注入和完整 Validate。",
+      "specLine": 68,
+      "evidence": [
+        "chapters/02-options-config/02-options-config.pdf",
+        "chapters/02-options-config/02-options-config.zip",
+        "verification/chapters/02-options-config/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "6.2",
+      "text": "实现严格 YAML 子树/完整文档解析、duration/正整数/枚举覆盖、后端与生产组合校验、敏感配置安全格式化及测试/README。",
+      "specLine": 70,
+      "evidence": [
+        "chapters/02-options-config/02-options-config.pdf",
+        "chapters/02-options-config/02-options-config.zip",
+        "verification/chapters/02-options-config/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "6.3",
+      "text": "创建 `docs/02-options-config.md`，解释 Option 顺序、默认值、启动即失败和生产安全边界，并引用实际配置代码。",
+      "specLine": 72,
+      "evidence": [
+        "chapters/02-options-config/02-options-config.pdf",
+        "chapters/02-options-config/02-options-config.zip",
+        "verification/chapters/02-options-config/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "6.4",
+      "text": "构建并解包复测 `02-options-config.pdf/.zip`，验证 YAML 示例与配置键一致，完成 PDF 视觉检查。",
+      "specLine": 74,
+      "evidence": [
+        "chapters/02-options-config/02-options-config.pdf",
+        "chapters/02-options-config/02-options-config.zip",
+        "verification/chapters/02-options-config/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "7",
+      "text": "制作第 03 节：StateStore 契约与测试基座",
+      "specLine": 77,
+      "evidence": [
+        "chapters/03-store-contracts/03-store-contracts.pdf",
+        "chapters/03-store-contracts/03-store-contracts.zip",
+        "verification/chapters/03-store-contracts/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "7.1",
+      "text": "在第 02 节快照上定义 Connection、Session、RoomMember、OfflineMessage、BroadcastResult、IdempotencyRecord 和统一存储错误。",
+      "specLine": 79,
+      "evidence": [
+        "chapters/03-store-contracts/03-store-contracts.pdf",
+        "chapters/03-store-contracts/03-store-contracts.zip",
+        "verification/chapters/03-store-contracts/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "7.2",
+      "text": "实现 Connection/Session/Room/Offline/Idempotency 及可选 freshness/expiration 接口，明确条件更新、幂等、分页和批次上限语义。",
+      "specLine": 81,
+      "evidence": [
+        "chapters/03-store-contracts/03-store-contracts.pdf",
+        "chapters/03-store-contracts/03-store-contracts.zip",
+        "verification/chapters/03-store-contracts/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "7.3",
+      "text": "建立可复用契约测试驱动、固定 clock/ID、空结果/冲突/游标/错误分类断言和本章 README。",
+      "specLine": 83,
+      "evidence": [
+        "chapters/03-store-contracts/03-store-contracts.pdf",
+        "chapters/03-store-contracts/03-store-contracts.zip",
+        "verification/chapters/03-store-contracts/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "7.4",
+      "text": "创建 `docs/03-store-contracts.md`，解释为什么原子条件操作必须进入接口而非“先读后写”，并构建、解包复测和检查 PDF/ZIP。",
+      "specLine": 85,
+      "evidence": [
+        "chapters/03-store-contracts/03-store-contracts.pdf",
+        "chapters/03-store-contracts/03-store-contracts.zip",
+        "verification/chapters/03-store-contracts/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "8",
+      "text": "制作第 04 节：Memory 连接与会话",
+      "specLine": 88,
+      "evidence": [
+        "chapters/04-memory-connections/04-memory-connections.pdf",
+        "chapters/04-memory-connections/04-memory-connections.zip",
+        "verification/chapters/04-memory-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "8.1",
+      "text": "在第 03 节快照上实现带 `sync.RWMutex` 的 Memory 数据结构、连接读写副本隔离、条件删除、Touch 和 stale 稳定分页。",
+      "specLine": 90,
+      "evidence": [
+        "chapters/04-memory-connections/04-memory-connections.pdf",
+        "chapters/04-memory-connections/04-memory-connections.zip",
+        "verification/chapters/04-memory-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "8.2",
+      "text": "实现 Session 创建/读取、原子 BindConnection、条件解绑和过期删除，覆盖旧连接不能清除新绑定的测试。",
+      "specLine": 92,
+      "evidence": [
+        "chapters/04-memory-connections/04-memory-connections.pdf",
+        "chapters/04-memory-connections/04-memory-connections.zip",
+        "verification/chapters/04-memory-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "8.3",
+      "text": "接入公共契约、并发读写和副本隔离测试，编写 README，并创建解释 generation 与锁边界的 `docs/04-memory-connections.md`。",
+      "specLine": 94,
+      "evidence": [
+        "chapters/04-memory-connections/04-memory-connections.pdf",
+        "chapters/04-memory-connections/04-memory-connections.zip",
+        "verification/chapters/04-memory-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "8.4",
+      "text": "构建 `04-memory-connections.pdf/.zip`，在解包目录运行普通及 race 测试，完成摘录、清单和 PDF 视觉检查。",
+      "specLine": 96,
+      "evidence": [
+        "chapters/04-memory-connections/04-memory-connections.pdf",
+        "chapters/04-memory-connections/04-memory-connections.zip",
+        "verification/chapters/04-memory-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "9",
+      "text": "制作第 05 节：Memory 房间、离线与幂等",
+      "specLine": 99,
+      "evidence": [
+        "chapters/05-memory-features/05-memory-features.pdf",
+        "chapters/05-memory-features/05-memory-features.zip",
+        "verification/chapters/05-memory-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "9.1",
+      "text": "在第 04 节快照上实现幂等 Join/Leave、稳定 Members 游标、generation 过滤和 RemoveConnection 反向清理。",
+      "specLine": 101,
+      "evidence": [
+        "chapters/05-memory-features/05-memory-features.pdf",
+        "chapters/05-memory-features/05-memory-features.zip",
+        "verification/chapters/05-memory-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "9.2",
+      "text": "实现离线 sequence、Append 上限与两种溢出策略、ListPending、MarkSent/Ack、过期清理和 messageId 幂等窗口。",
+      "specLine": 103,
+      "evidence": [
+        "chapters/05-memory-features/05-memory-features.pdf",
+        "chapters/05-memory-features/05-memory-features.zip",
+        "verification/chapters/05-memory-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "9.3",
+      "text": "完成并发 append、重复 ack、游标、过期和溢出测试/README，创建 `docs/05-memory-features.md` 解释队列与索引一致性。",
+      "specLine": 105,
+      "evidence": [
+        "chapters/05-memory-features/05-memory-features.pdf",
+        "chapters/05-memory-features/05-memory-features.zip",
+        "verification/chapters/05-memory-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "9.4",
+      "text": "构建并解包运行 `05-memory-features` 普通及 race 测试，验证 PDF 代码与 ZIP 一致并检查版式。",
+      "specLine": 107,
+      "evidence": [
+        "chapters/05-memory-features/05-memory-features.pdf",
+        "chapters/05-memory-features/05-memory-features.zip",
+        "verification/chapters/05-memory-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "10",
+      "text": "制作第 06 节：Pusher 与 API Gateway 适配器",
+      "specLine": 110,
+      "evidence": [
+        "chapters/06-pusher/06-pusher.pdf",
+        "chapters/06-pusher/06-pusher.zip",
+        "verification/chapters/06-pusher/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "10.1",
+      "text": "在第 05 节快照上实现 Pusher、PushInput/Result、PushErrorKind、参数检查和并发安全 FakePusher。",
+      "specLine": 112,
+      "evidence": [
+        "chapters/06-pusher/06-pusher.pdf",
+        "chapters/06-pusher/06-pusher.zip",
+        "verification/chapters/06-pusher/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "10.2",
+      "text": "实现 stage-specific management endpoint、SDK client 接口、PostToConnection、gone/throttled/unavailable 映射和有界指数退避。",
+      "specLine": 114,
+      "evidence": [
+        "chapters/06-pusher/06-pusher.pdf",
+        "chapters/06-pusher/06-pusher.zip",
+        "verification/chapters/06-pusher/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "10.3",
+      "text": "完成 endpoint、请求体、错误分类、重试上限、context 取消和 FakePusher 脚本化测试/README。",
+      "specLine": 116,
+      "evidence": [
+        "chapters/06-pusher/06-pusher.pdf",
+        "chapters/06-pusher/06-pusher.zip",
+        "verification/chapters/06-pusher/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "10.4",
+      "text": "创建 `docs/06-pusher.md`，解释 API Gateway 持有 socket、Lambda return body 与业务推送的区别，构建并解包执行普通/race 测试及 PDF 检查。",
+      "specLine": 118,
+      "evidence": [
+        "chapters/06-pusher/06-pusher.pdf",
+        "chapters/06-pusher/06-pusher.zip",
+        "verification/chapters/06-pusher/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "11",
+      "text": "制作第 07 节：Context、路由与中间件",
+      "specLine": 121,
+      "evidence": [
+        "chapters/07-router/07-router.pdf",
+        "chapters/07-router/07-router.zip",
+        "verification/chapters/07-router/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "11.1",
+      "text": "在第 06 节快照上实现 Context 元数据、Payload、错误/响应/Abort 状态和安全访问器。",
+      "specLine": 123,
+      "evidence": [
+        "chapters/07-router/07-router.pdf",
+        "chapters/07-router/07-router.zip",
+        "verification/chapters/07-router/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "11.2",
+      "text": "实现精确 path、`*path`、Use/Handle/NoRoute、确定执行顺序、Abort、route key 映射和 panic recovery。",
+      "specLine": 125,
+      "evidence": [
+        "chapters/07-router/07-router.pdf",
+        "chapters/07-router/07-router.zip",
+        "verification/chapters/07-router/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "11.3",
+      "text": "完成匹配顺序、通配符、中间件、NoRoute、panic 和路径边界测试/README，创建 `docs/07-router.md`。",
+      "specLine": 127,
+      "evidence": [
+        "chapters/07-router/07-router.pdf",
+        "chapters/07-router/07-router.zip",
+        "verification/chapters/07-router/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "11.4",
+      "text": "构建并解包复测 `07-router.pdf/.zip`，核对所有 route 示例与实现，完成 PDF 视觉检查。",
+      "specLine": 129,
+      "evidence": [
+        "chapters/07-router/07-router.pdf",
+        "chapters/07-router/07-router.zip",
+        "verification/chapters/07-router/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "12",
+      "text": "制作第 08 节：API Gateway 事件与生命周期",
+      "specLine": 132,
+      "evidence": [
+        "chapters/08-lifecycle/08-lifecycle.pdf",
+        "chapters/08-lifecycle/08-lifecycle.zip",
+        "verification/chapters/08-lifecycle/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "12.1",
+      "text": "在第 07 节快照上实现内部 Connect/Disconnect/Message 事件、API Gateway 元数据映射、自定义 route 入口和状态码映射。",
+      "specLine": 134,
+      "evidence": [
+        "chapters/08-lifecycle/08-lifecycle.pdf",
+        "chapters/08-lifecycle/08-lifecycle.zip",
+        "verification/chapters/08-lifecycle/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "12.2",
+      "text": "接入重复 connect 幂等、disconnect 条件清理、默认消息入口和认证/协议/内部错误的安全响应。",
+      "specLine": 136,
+      "evidence": [
+        "chapters/08-lifecycle/08-lifecycle.pdf",
+        "chapters/08-lifecycle/08-lifecycle.zip",
+        "verification/chapters/08-lifecycle/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "12.3",
+      "text": "完成三类事件、重复连接、乱序断开、二进制拒绝和状态码测试/README，创建 `docs/08-lifecycle.md` 及生命周期流程图。",
+      "specLine": 138,
+      "evidence": [
+        "chapters/08-lifecycle/08-lifecycle.pdf",
+        "chapters/08-lifecycle/08-lifecycle.zip",
+        "verification/chapters/08-lifecycle/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "12.4",
+      "text": "构建并解包运行 `08-lifecycle` 普通及 race 测试，检查 Lambda 返回值不作为应用消息的讲解与实际代码一致。",
+      "specLine": 140,
+      "evidence": [
+        "chapters/08-lifecycle/08-lifecycle.pdf",
+        "chapters/08-lifecycle/08-lifecycle.zip",
+        "verification/chapters/08-lifecycle/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "13",
+      "text": "制作第 09 节：Engine 与同连接消息闭环",
+      "specLine": 143,
+      "evidence": [
+        "chapters/09-engine/09-engine.pdf",
+        "chapters/09-engine/09-engine.zip",
+        "verification/chapters/09-engine/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "13.1",
+      "text": "在第 08 节快照上组合 Engine、Router、StateStore、Pusher 和配置，实现消息解码、活动绑定/generation 校验及 Context 构造。",
+      "specLine": 145,
+      "evidence": [
+        "chapters/09-engine/09-engine.pdf",
+        "chapters/09-engine/09-engine.zip",
+        "verification/chapters/09-engine/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "13.2",
+      "text": "实现 Handler 结果分发、Reply、显式 Push、PushToSession、gone 清理、离线策略入口和入站 messageId 幂等编排。",
+      "specLine": 147,
+      "evidence": [
+        "chapters/09-engine/09-engine.pdf",
+        "chapters/09-engine/09-engine.zip",
+        "verification/chapters/09-engine/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "13.3",
+      "text": "完成同连接回复、主动单播、Session 单播、无实例亲和性、旧连接和失败路径测试/README。",
+      "specLine": 149,
+      "evidence": [
+        "chapters/09-engine/09-engine.pdf",
+        "chapters/09-engine/09-engine.zip",
+        "verification/chapters/09-engine/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "13.4",
+      "text": "创建 `docs/09-engine.md`，用 sequence 图解释入站 Connection_ID 到 PostToConnection 的闭环，构建并解包执行普通/race 测试及 PDF 检查。",
+      "specLine": 151,
+      "evidence": [
+        "chapters/09-engine/09-engine.pdf",
+        "chapters/09-engine/09-engine.zip",
+        "verification/chapters/09-engine/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "14",
+      "text": "制作第 10 节：认证、授权与 Principal",
+      "specLine": 154,
+      "evidence": [
+        "chapters/10-auth/10-auth.pdf",
+        "chapters/10-auth/10-auth.zip",
+        "verification/chapters/10-auth/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "14.1",
+      "text": "在第 09 节快照上实现 Principal、ConnectRequest、Authenticator/Authorizer、函数适配器、匿名开发模式和 Action 资源模型。",
+      "specLine": 156,
+      "evidence": [
+        "chapters/10-auth/10-auth.pdf",
+        "chapters/10-auth/10-auth.zip",
+        "verification/chapters/10-auth/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "14.2",
+      "text": "将认证接入 connect 首要阶段，将 Principal 写入 Connection/Session/Context，并接入 path、房间和恢复授权。",
+      "specLine": 158,
+      "evidence": [
+        "chapters/10-auth/10-auth.pdf",
+        "chapters/10-auth/10-auth.zip",
+        "verification/chapters/10-auth/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "14.3",
+      "text": "完成认证失败无副作用、匿名限制、Principal 隔离、授权顺序、包内 auth 测试和日志脱敏测试/README。",
+      "specLine": 160,
+      "evidence": [
+        "chapters/10-auth/10-auth.pdf",
+        "chapters/10-auth/10-auth.zip",
+        "verification/chapters/10-auth/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "14.4",
+      "text": "创建 `docs/10-auth.md`，解释框架不绑定 token 格式及凭据不落地日志的边界，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 162,
+      "evidence": [
+        "chapters/10-auth/10-auth.pdf",
+        "chapters/10-auth/10-auth.zip",
+        "verification/chapters/10-auth/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "15",
+      "text": "制作第 11 节：心跳与 Maintenance",
+      "specLine": 165,
+      "evidence": [
+        "chapters/11-maintenance/11-maintenance.pdf",
+        "chapters/11-maintenance/11-maintenance.zip",
+        "verification/chapters/11-maintenance/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "15.1",
+      "text": "在第 10 节快照上实现 ping/pong、应用消息 last-seen、固定 clock 时间计算和旧 generation 忽略。",
+      "specLine": 167,
+      "evidence": [
+        "chapters/11-maintenance/11-maintenance.pdf",
+        "chapters/11-maintenance/11-maintenance.zip",
+        "verification/chapters/11-maintenance/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "15.2",
+      "text": "实现可重入批量 Maintenance、stale 条件清理、gone 统一入口、Session/Offline/Idempotency 过期清理和结果统计。",
+      "specLine": 169,
+      "evidence": [
+        "chapters/11-maintenance/11-maintenance.pdf",
+        "chapters/11-maintenance/11-maintenance.zip",
+        "verification/chapters/11-maintenance/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "15.3",
+      "text": "接入安全维护日志/计数钩子，完成固定时钟、重复清理、并发替代、gone 和批次失败测试/README。",
+      "specLine": 171,
+      "evidence": [
+        "chapters/11-maintenance/11-maintenance.pdf",
+        "chapters/11-maintenance/11-maintenance.zip",
+        "verification/chapters/11-maintenance/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "15.4",
+      "text": "创建 `docs/11-maintenance.md`，说明 Lambda 内不启动永久后台任务及 API Gateway 硬生命周期，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 173,
+      "evidence": [
+        "chapters/11-maintenance/11-maintenance.pdf",
+        "chapters/11-maintenance/11-maintenance.zip",
+        "verification/chapters/11-maintenance/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "16",
+      "text": "制作第 12 节：Session 与原子重连",
+      "specLine": 176,
+      "evidence": [
+        "chapters/12-reconnect/12-reconnect.pdf",
+        "chapters/12-reconnect/12-reconnect.zip",
+        "verification/chapters/12-reconnect/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "16.1",
+      "text": "在第 11 节快照上实现新 Session、恢复凭据签发/哈希、过期与 Principal 校验，以及 replaceExisting 两种策略。",
+      "specLine": 178,
+      "evidence": [
+        "chapters/12-reconnect/12-reconnect.pdf",
+        "chapters/12-reconnect/12-reconnect.zip",
+        "verification/chapters/12-reconnect/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "16.2",
+      "text": "实现原子 BindConnection、generation 精确递增、旧绑定失效、断连条件解绑和重连窗口保留。",
+      "specLine": 180,
+      "evidence": [
+        "chapters/12-reconnect/12-reconnect.pdf",
+        "chapters/12-reconnect/12-reconnect.zip",
+        "verification/chapters/12-reconnect/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "16.3",
+      "text": "在消息、心跳、disconnect 和 ack 统一 fencing，完成新会话、无效恢复、跨 Principal、并发重连和旧事件测试/README。",
+      "specLine": 182,
+      "evidence": [
+        "chapters/12-reconnect/12-reconnect.pdf",
+        "chapters/12-reconnect/12-reconnect.zip",
+        "verification/chapters/12-reconnect/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "16.4",
+      "text": "创建 `docs/12-reconnect.md`，解释 Connection_ID 与 Session_ID 及 CAS/fencing，构建并解包执行普通/race、重复重连测试和 PDF 检查。",
+      "specLine": 184,
+      "evidence": [
+        "chapters/12-reconnect/12-reconnect.pdf",
+        "chapters/12-reconnect/12-reconnect.zip",
+        "verification/chapters/12-reconnect/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "17",
+      "text": "制作第 13 节：离线队列、确认与补发",
+      "specLine": 187,
+      "evidence": [
+        "chapters/13-offline/13-offline.pdf",
+        "chapters/13-offline/13-offline.zip",
+        "verification/chapters/13-offline/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "17.1",
+      "text": "在第 12 节快照上实现离线入队、queue/retention/overflow、无活动连接和实时 gone 的转入策略及结果区分。",
+      "specLine": 189,
+      "evidence": [
+        "chapters/13-offline/13-offline.pdf",
+        "chapters/13-offline/13-offline.zip",
+        "verification/chapters/13-offline/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "17.2",
+      "text": "实现按 sequence 分页 replay、原 messageId 保留、postSuccess 删除、clientAck MarkSent/Ack、超时重发和中断保留。",
+      "specLine": 191,
+      "evidence": [
+        "chapters/13-offline/13-offline.pdf",
+        "chapters/13-offline/13-offline.zip",
+        "verification/chapters/13-offline/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "17.3",
+      "text": "完成顺序、所有权、旧 generation ack、重复 ack、两种策略、溢出、过期和 replay 中断测试/README。",
+      "specLine": 193,
+      "evidence": [
+        "chapters/13-offline/13-offline.pdf",
+        "chapters/13-offline/13-offline.zip",
+        "verification/chapters/13-offline/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "17.4",
+      "text": "创建 `docs/13-offline.md`，解释至少一次、客户端去重和两种 ack 权衡，构建并解包执行普通/race、重复 replay/ack 测试和 PDF 检查。",
+      "specLine": 195,
+      "evidence": [
+        "chapters/13-offline/13-offline.pdf",
+        "chapters/13-offline/13-offline.zip",
+        "verification/chapters/13-offline/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "18",
+      "text": "制作第 14 节：房间与有界广播",
+      "specLine": 198,
+      "evidence": [
+        "chapters/14-rooms/14-rooms.pdf",
+        "chapters/14-rooms/14-rooms.zip",
+        "verification/chapters/14-rooms/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "18.1",
+      "text": "在第 13 节快照上实现授权 Join/Leave、成员分页、当前 generation 过滤和 disconnect/stale/gone 成员清理。",
+      "specLine": 200,
+      "evidence": [
+        "chapters/14-rooms/14-rooms.pdf",
+        "chapters/14-rooms/14-rooms.zip",
+        "verification/chapters/14-rooms/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "18.2",
+      "text": "实现广播 Envelope、每目标消息标识、有界 worker 池、context 取消、逐目标错误收集、gone/离线处理和分项统计。",
+      "specLine": 202,
+      "evidence": [
+        "chapters/14-rooms/14-rooms.pdf",
+        "chapters/14-rooms/14-rooms.zip",
+        "verification/chapters/14-rooms/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "18.3",
+      "text": "完成重复成员、空房间、发送者排除、大小/成员上限、部分失败和并发上限测试/README。",
+      "specLine": 204,
+      "evidence": [
+        "chapters/14-rooms/14-rooms.pdf",
+        "chapters/14-rooms/14-rooms.zip",
+        "verification/chapters/14-rooms/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "18.4",
+      "text": "创建 `docs/14-rooms.md`，解释通用成员与游戏房间状态的边界及故障隔离，构建并解包执行普通/race、重复 broadcast/cleanup 测试和 PDF 检查。",
+      "specLine": 206,
+      "evidence": [
+        "chapters/14-rooms/14-rooms.pdf",
+        "chapters/14-rooms/14-rooms.zip",
+        "verification/chapters/14-rooms/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "19",
+      "text": "制作第 15 节：DynamoDB 连接与会话",
+      "specLine": 209,
+      "evidence": [
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+        "verification/chapters/15-dynamodb-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "19.1",
+      "text": "在第 14 节快照上实现 DynamoDB client 接口、表配置、PK/SK、属性编解码、clock 和统一错误映射。",
+      "specLine": 211,
+      "evidence": [
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+        "verification/chapters/15-dynamodb-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "19.2",
+      "text": "实现连接条件写/删、Touch、stale 查询分页、Session 唯一创建、原子 Bind/Unbind 和 TTL/主动过期。",
+      "specLine": 213,
+      "evidence": [
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+        "verification/chapters/15-dynamodb-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "19.3",
+      "text": "将连接/会话公共契约接入 `dynamodbtest.Fake`，覆盖条件竞争、分页、TTL 和错误分类，并编写 README 的 fake 边界。",
+      "specLine": 215,
+      "evidence": [
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+        "verification/chapters/15-dynamodb-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "19.4",
+      "text": "创建 `docs/15-dynamodb-connections.md`，解释条件表达式与 TTL 非实时语义，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 217,
+      "evidence": [
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+        "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+        "verification/chapters/15-dynamodb-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "20",
+      "text": "制作第 16 节：DynamoDB 房间、离线与幂等",
+      "specLine": 220,
+      "evidence": [
+        "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+        "chapters/16-dynamodb-features/16-dynamodb-features.zip",
+        "verification/chapters/16-dynamodb-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "20.1",
+      "text": "在第 15 节快照上实现房间成员与 Connection_ID 反向索引、幂等 Join/Leave、Members 分页和 RemoveConnection。",
+      "specLine": 222,
+      "evidence": [
+        "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+        "chapters/16-dynamodb-features/16-dynamodb-features.zip",
+        "verification/chapters/16-dynamodb-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "20.2",
+      "text": "实现离线 session/sequence key、带计数条件的 Append、pending/sent/ack 条件迁移、过期清理和 messageId 幂等记录。",
+      "specLine": 224,
+      "evidence": [
+        "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+        "chapters/16-dynamodb-features/16-dynamodb-features.zip",
+        "verification/chapters/16-dynamodb-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "20.3",
+      "text": "完成事务/条件冲突、部分清理、故障注入、队列和完整 DynamoDB 契约测试/README，保持 fake 验证边界。",
+      "specLine": 226,
+      "evidence": [
+        "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+        "chapters/16-dynamodb-features/16-dynamodb-features.zip",
+        "verification/chapters/16-dynamodb-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "20.4",
+      "text": "创建 `docs/16-dynamodb-features.md`，解释 key 设计、队列计数与部分失败，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 228,
+      "evidence": [
+        "chapters/16-dynamodb-features/16-dynamodb-features.pdf",
+        "chapters/16-dynamodb-features/16-dynamodb-features.zip",
+        "verification/chapters/16-dynamodb-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "21",
+      "text": "制作第 17 节：Redis 连接与会话",
+      "specLine": 231,
+      "evidence": [
+        "chapters/17-redis-connections/17-redis-connections.pdf",
+        "chapters/17-redis-connections/17-redis-connections.zip",
+        "verification/chapters/17-redis-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "21.1",
+      "text": "在第 16 节快照上实现 Redis client/key prefix/JSON 编解码、clock、连接和 Session key/TTL 及错误分类。",
+      "specLine": 233,
+      "evidence": [
+        "chapters/17-redis-connections/17-redis-connections.pdf",
+        "chapters/17-redis-connections/17-redis-connections.zip",
+        "verification/chapters/17-redis-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "21.2",
+      "text": "使用 Lua 实现条件删除、原子 Bind/Unbind，完成 Touch、stale sorted-set、创建/读取和 context 取消。",
+      "specLine": 235,
+      "evidence": [
+        "chapters/17-redis-connections/17-redis-connections.pdf",
+        "chapters/17-redis-connections/17-redis-connections.zip",
+        "verification/chapters/17-redis-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "21.3",
+      "text": "将契约测试接入 miniredis，覆盖脚本竞争、TTL、stale 索引和取消，并在 README 明确 miniredis 不是实际 Redis 服务。",
+      "specLine": 237,
+      "evidence": [
+        "chapters/17-redis-connections/17-redis-connections.pdf",
+        "chapters/17-redis-connections/17-redis-connections.zip",
+        "verification/chapters/17-redis-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "21.4",
+      "text": "创建 `docs/17-redis-connections.md`，解释 Lua 原子性和索引过期，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 239,
+      "evidence": [
+        "chapters/17-redis-connections/17-redis-connections.pdf",
+        "chapters/17-redis-connections/17-redis-connections.zip",
+        "verification/chapters/17-redis-connections/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "22",
+      "text": "制作第 18 节：Redis 房间、离线与幂等",
+      "specLine": 242,
+      "evidence": [
+        "chapters/18-redis-features/18-redis-features.pdf",
+        "chapters/18-redis-features/18-redis-features.zip",
+        "verification/chapters/18-redis-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "22.1",
+      "text": "在第 17 节快照上实现房间 key/反向索引、原子 Join/Leave、稳定 Members 批次和 Lua RemoveConnection。",
+      "specLine": 244,
+      "evidence": [
+        "chapters/18-redis-features/18-redis-features.pdf",
+        "chapters/18-redis-features/18-redis-features.zip",
+        "verification/chapters/18-redis-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "22.2",
+      "text": "实现离线 sequence/list/zset、Lua Append 上限与溢出、pending/sent/ack 迁移、索引过期和原子幂等窗口。",
+      "specLine": 246,
+      "evidence": [
+        "chapters/18-redis-features/18-redis-features.pdf",
+        "chapters/18-redis-features/18-redis-features.zip",
+        "verification/chapters/18-redis-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "22.3",
+      "text": "完成脚本原子性、队列溢出、过期、断连清理和完整 Redis 契约/race 测试及 README。",
+      "specLine": 248,
+      "evidence": [
+        "chapters/18-redis-features/18-redis-features.pdf",
+        "chapters/18-redis-features/18-redis-features.zip",
+        "verification/chapters/18-redis-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "22.4",
+      "text": "创建 `docs/18-redis-features.md`，比较 Redis 与 DynamoDB 的相同契约和不同实现，构建并解包执行普通/race 测试和 PDF 检查。",
+      "specLine": 250,
+      "evidence": [
+        "chapters/18-redis-features/18-redis-features.pdf",
+        "chapters/18-redis-features/18-redis-features.zip",
+        "verification/chapters/18-redis-features/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "23",
+      "text": "制作第 19 节：server、Factory 与可观测性",
+      "specLine": 253,
+      "evidence": [
+        "chapters/19-server-observability/19-server-observability.pdf",
+        "chapters/19-server-observability/19-server-observability.zip",
+        "verification/chapters/19-server-observability/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "23.1",
+      "text": "在第 18 节快照上实现 Factory 单后端构造、注入优先、AWS/Redis 默认客户端、资源所有权和幂等 Close。",
+      "specLine": 255,
+      "evidence": [
+        "chapters/19-server-observability/19-server-observability.pdf",
+        "chapters/19-server-observability/19-server-observability.zip",
+        "verification/chapters/19-server-observability/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "23.2",
+      "text": "实现 `ws.Serve/Close`、server Options/YAML/`lambda: ws` 分支和最小传递编译闭包，保持其他 Lambda 类型行为不变。",
+      "specLine": 257,
+      "evidence": [
+        "chapters/19-server-observability/19-server-observability.pdf",
+        "chapters/19-server-observability/19-server-observability.zip",
+        "verification/chapters/19-server-observability/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "23.3",
+      "text": "完成结构化 connect/disconnect/reconnect/push/replay/broadcast/maintenance 钩子、指标、安全关联字段及 server/factory 测试/README。",
+      "specLine": 259,
+      "evidence": [
+        "chapters/19-server-observability/19-server-observability.pdf",
+        "chapters/19-server-observability/19-server-observability.zip",
+        "verification/chapters/19-server-observability/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "23.4",
+      "text": "创建 `docs/19-server-observability.md`，解释依赖所有权和安全日志，构建并解包执行普通/race 测试，核对 server 示例与当前行为并检查 PDF。",
+      "specLine": 261,
+      "evidence": [
+        "chapters/19-server-observability/19-server-observability.pdf",
+        "chapters/19-server-observability/19-server-observability.zip",
+        "verification/chapters/19-server-observability/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24",
+      "text": "制作第 20 节：跨后端集成、故障注入与最终源码",
+      "specLine": 264,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24.1",
+      "text": "建立 `20-integration` 快照，从 Source_Snapshot 原样复制完整 `ws/`、WebSocket 相关测试和必要 server 编译闭包，不做格式化或语义改写。",
+      "specLine": 266,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24.2",
+      "text": "接入三后端集成矩阵、生命周期竞争、认证重连、心跳 gone、离线补发、房间广播、协议/panic/存储/Pusher 故障注入和重复 race 场景。",
+      "specLine": 268,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24.3",
+      "text": "创建 `docs/20-integration.md` 和 README，给出普通、race、vet、关键并发重复 20 次及终态比较命令，并明确本地 fake 与真实服务验证边界。",
+      "specLine": 270,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24.4",
+      "text": "构建并解包 `20-integration.pdf/.zip`，执行完整普通测试、race、vet、重复并发测试，比较最终 `ws/` 路径集合、大小和 SHA-256，保存全部日志。",
+      "specLine": 272,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "24.5",
+      "text": "检查第 20 节 PDF 首页、长代码页、命令页和末页，确认其不包含真实部署已验证的声明，并记录实际检查页码。",
+      "specLine": 274,
+      "evidence": [
+        "chapters/20-integration/20-integration.pdf",
+        "chapters/20-integration/20-integration.zip",
+        "verification/chapters/20-integration/result.json",
+        "verification/visual-inspection.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25",
+      "text": "完成全量交付验收和可重建验证",
+      "specLine": 277,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25.1",
+      "text": "运行 `node tools/verify.mjs --all`，从零解包全部 20 个 ZIP，逐节执行普通测试和标记章节的 race，核对章节数量、命名、manifest、ZIP 安全和摘录引用。",
+      "specLine": 279,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25.2",
+      "text": "运行最终完整验证与源等价检查，确认 `ws/` 无 missing/extra/different，最终 WebSocket 测试和 server 接入均来自当前 Source_Snapshot。",
+      "specLine": 281,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25.3",
+      "text": "对全部 20 份 PDF 检查首页、至少一个长代码页和末页，记录中文、代码裁切、空白页、分页和页码结果，修复问题后重新生成并复测受影响章节。",
+      "specLine": 283,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25.4",
+      "text": "从干净临时副本按文档执行一次单章重建与全量重建，确认不修改原始仓库、不更新业务依赖、不递归打包且失败能返回非零。",
+      "specLine": 285,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    },
+    {
+      "task": "25.5",
+      "text": "完成 `verification/chapter-results.json`、`final-equivalence.json`、`visual-inspection.json` 和根 manifest，逐项记录实际命令、退出码、日志、产物哈希及未执行的真实服务验证边界。",
+      "specLine": 287,
+      "evidence": [
+        "verification/chapter-results.json",
+        "verification/final-equivalence.json",
+        "verification/visual-inspection.json",
+        "verification/rebuild-check.json",
+        "verification/summary.json"
+      ],
+      "status": "passed"
+    }
+  ],
+  "verifiedAt": "2026-11-24T07:06:36.906Z"
+}

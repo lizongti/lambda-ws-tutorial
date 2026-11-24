@@ -1,0 +1,4 @@
+mode:
+  debug: true
+  run: batch # strict, partial, batch, reentrant
+  reply: false

@@ -1,0 +1,38 @@
+{
+  "number": 15,
+  "slug": "dynamodb-connections",
+  "title": "DynamoDB 连接与会话",
+  "pdf": "chapters/15-dynamodb-connections/15-dynamodb-connections.pdf",
+  "zip": "chapters/15-dynamodb-connections/15-dynamodb-connections.zip",
+  "snapshot": "work/snapshots/15-dynamodb-connections",
+  "testCommand": "go test -mod=readonly -count=1 ./...",
+  "race": true,
+  "snippetCount": 4,
+  "zipEntryCount": 54,
+  "commands": [
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/snapshots/15-dynamodb-connections",
+      "startedAt": "2026-11-24T06:52:28.767Z",
+      "exitCode": 0,
+      "log": "verification/chapters/15-dynamodb-connections/01-work-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -count=1 ./...",
+      "cwd": "work/extract/15-dynamodb-connections/15-dynamodb-connections",
+      "startedAt": "2026-11-24T06:52:36.287Z",
+      "exitCode": 0,
+      "log": "verification/chapters/15-dynamodb-connections/02-extracted-test.log"
+    },
+    {
+      "command": "go test -mod=readonly -race -count=1 ./...",
+      "cwd": "work/extract/15-dynamodb-connections/15-dynamodb-connections",
+      "startedAt": "2026-11-24T06:52:39.303Z",
+      "exitCode": 0,
+      "log": "verification/chapters/15-dynamodb-connections/03-extracted-race.log"
+    }
+  ],
+  "pdfSha256": "34c7c7399ce1e6f605e88c88fd28b5989cd9f78669ec260879f9e108f1d40303",
+  "zipSha256": "2fd91755f5b89429923deb11511363b5676b959fdcfc522d9fdaa6d700a5f371",
+  "verifiedAt": "2026-11-24T06:52:46.179Z"
+}

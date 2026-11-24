@@ -1,0 +1,22 @@
+[
+  { "number": 1, "slug": "protocol", "title": "JSON Envelope 与协议校验", "race": false, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 2, "slug": "options-config", "title": "Options、默认配置与 YAML", "race": false, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 3, "slug": "store-contracts", "title": "StateStore 契约与测试基座", "race": false, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 4, "slug": "memory-connections", "title": "Memory 连接与会话", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 5, "slug": "memory-features", "title": "Memory 房间、离线与幂等", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 6, "slug": "pusher", "title": "Pusher 与 API Gateway 适配器", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 7, "slug": "router", "title": "Context、路由与中间件", "race": false, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "ws", "tests"] },
+  { "number": 8, "slug": "lifecycle", "title": "API Gateway 事件与生命周期", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 9, "slug": "engine", "title": "Engine 与同连接消息闭环", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 10, "slug": "auth", "title": "认证、授权与 Principal", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 11, "slug": "maintenance", "title": "心跳与 Maintenance", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 12, "slug": "reconnect", "title": "Session 与原子重连", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 13, "slug": "offline", "title": "离线队列、确认与补发", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 14, "slug": "rooms", "title": "房间与有界广播", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 15, "slug": "dynamodb-connections", "title": "DynamoDB 连接与会话", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 16, "slug": "dynamodb-features", "title": "DynamoDB 房间、离线与幂等", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 17, "slug": "redis-connections", "title": "Redis 连接与会话", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 18, "slug": "redis-features", "title": "Redis 房间、离线与幂等", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "ws", "tests"] },
+  { "number": 19, "slug": "server-observability", "title": "server、Factory 与可观测性", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "event", "http", "reqresp", "server", "sqs", "ws", "tests"] },
+  { "number": 20, "slug": "integration", "title": "跨后端集成与故障注入", "race": true, "testCommand": "go test -mod=readonly -count=1 ./...", "fullSourceCopy": true, "allowlist": ["go.mod", "go.sum", "README.md", "dynamic", "event", "http", "reqresp", "server", "sqs", "ws", "tests"] }
+]
